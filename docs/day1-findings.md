@@ -15,7 +15,7 @@
   `send_document` / `send_video` on our adapter, so those are overridden to forward `MEDIA:<path>` too.
   Live result: fake order -> agent turn (10-26 s) -> Telegram text delivered (rc 0).
 - Media upload is flaky on this network (measured ~13 KB/s upload): files of 35-56 KB sometimes succeed,
-  39-100 KB and 678 KB sometimes time out ("Timed out"), independent of size. Not a plugin bug. Mitigations to
+  39-100 KB and 678 KB sometimes time out ("Timed out"), independent of size. Confirmed by user: personal hotspot, so a network limit, not a plugin bug. Mitigations to
   build: small clips, one retry, and a text-first fallback with the clip path. Test on demo-day network.
 - Camera option A works from the agent shell once camera access is granted: 1920x1080 frame in 0.14 s.
 - Plugin is symlinked at `~/.hermes/plugins/standing-orders` and enabled; the platform auto-enables via
