@@ -31,3 +31,10 @@
 - Confirm on your phone: text from fake events arrived; one clip-less image (q50 JPEG) arrived.
 - Camera option C (Desktop) not needed unless the gateway launched under launchd lacks permission:
   TEST by capturing a frame from inside the gateway process (next step).
+
+## Camera inside the gateway (TESTED)
+- Option A under the launchd-supervised gateway: `PROBE_CAMERA` returns `no frame` (macOS camera permission
+  is tied to the launching app; launchd has none). Same code works from an authorized shell (0.14 s).
+- Next: option B (stop the launchd service, run `hermes gateway run` from an authorized Terminal), then
+  re-run `echo PROBE_CAMERA > ~/.hermes/plugin-data/standing-orders/fire.txt` and read `camera.txt`.
+- Fallback: option C (Desktop renderer posts frames to `plugin_api.py`).

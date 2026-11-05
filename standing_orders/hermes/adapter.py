@@ -3,6 +3,7 @@ and forwards the turn's reply to the home chat via the send_message tool."""
 import asyncio
 import logging
 import shutil
+import time
 import uuid
 from pathlib import Path
 from datetime import datetime, UTC
@@ -16,6 +17,24 @@ logger = logging.getLogger(__name__)
 
 PLATFORM = "standing_orders"
 CHAT_ID = "cam0"
+
+def _probe_camera() -> str:
+    """Day 1 spike: can the gateway process capture a frame? Replaced by AvfSource."""
+    try:
+        import cv2
+        cap = cv2.VideoCapture(0, cv2.CAP_AVFOUNDATION)
+        frame = None
+        for _ in range(30):
+            ok, f = cap.read()
+            if ok and f is not None and f.mean() > 1:
+                frame = f
+                break
+            time.sleep(0.1)
+        cap.release()
+        return "no frame" if frame is None else f"frame {frame.shape} mean={frame.mean():.1f}"
+    except Exception as e:
+        return f"error: {e}"
+
 
 class StandingOrdersAdapter(BasePlatformAdapter):
     def __init__(self, config):
@@ -40,7 +59,10 @@ class StandingOrdersAdapter(BasePlatformAdapter):
             if self._trigger.exists():
                 text = self._trigger.read_text().strip()
                 self._trigger.unlink()
-                if text:
+                if text == "PROBE_CAMERA":
+                    result = await asyncio.to_thread(_probe_camera)
+                    (self._trigger.parent / "camera.txt").write_text(result)
+                elif text:
                     await self.fire(text)
 
     async def fire(self, text: str) -> None:
