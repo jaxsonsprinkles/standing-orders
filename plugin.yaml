@@ -1,0 +1,21 @@
+name: standing-orders
+version: 0.1.0
+description: Plain-English event triggers from your camera that wake Hermes
+kind: platform
+manifest_version: 2
+license: MIT
+tags: [vision, automation, camera, gateway]
+requires_hermes: ">=0.22.7"
+provides_tools:
+  - so_status
+python_dependencies:
+  - "opencv-python-headless>=4.8,<5"
+  - "onnxruntime>=1.17,<2"
+  - "numpy>=2.0,<3"
+config_schema:
+  camera_index: {type: int, default: 0, label: "Camera"}
+  sample_fps: {type: float, default: 1.0}
+  retention_minutes: {type: int, default: 60}
+  max_recording_mb: {type: int, default: 2048}
+  vision_budget_per_hour: {type: int, default: 20}
+  deliver_to: {type: str, default: "", label: "Chat for fired orders"}
