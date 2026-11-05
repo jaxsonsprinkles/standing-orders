@@ -1,12 +1,14 @@
 """Gateway platform adapter. Day 1 stub: marks connected, can inject one fake event,
 and forwards the turn's reply to the home chat via the send_message tool."""
 import asyncio
-import json
 import logging
+import shutil
 import uuid
+from pathlib import Path
 from datetime import datetime, UTC
 
 from gateway.config import Platform
+from hermes_constants import get_hermes_home
 from gateway.platforms.base import BasePlatformAdapter, SendResult
 from gateway.platforms.event import MessageEvent, MessageType
 
@@ -15,20 +17,31 @@ logger = logging.getLogger(__name__)
 PLATFORM = "standing_orders"
 CHAT_ID = "cam0"
 
-_ctx = None  # set by register_platform; used for dispatch_tool in send()
-
-
 class StandingOrdersAdapter(BasePlatformAdapter):
     def __init__(self, config):
         super().__init__(config, Platform(PLATFORM))
         self.deliver_to = (config.extra or {}).get("deliver_to", "telegram")
 
     async def connect(self, *, is_reconnect: bool = False) -> bool:
+        self._trigger = get_hermes_home() / "plugin-data" / "standing-orders" / "fire.txt"
+        self._trigger.parent.mkdir(parents=True, exist_ok=True)
+        self._watch_task = asyncio.create_task(self._watch_trigger())
         self._mark_connected()
         return True
 
     async def disconnect(self) -> None:
+        self._watch_task.cancel()
         self._mark_disconnected()
+
+    async def _watch_trigger(self) -> None:
+        """Day 1 spike: writing text to fire.txt fires a fake event. Replaced by the engine."""
+        while True:
+            await asyncio.sleep(1)
+            if self._trigger.exists():
+                text = self._trigger.read_text().strip()
+                self._trigger.unlink()
+                if text:
+                    await self.fire(text)
 
     async def fire(self, text: str) -> None:
         """Start an agent turn as if an order fired."""
@@ -38,33 +51,49 @@ class StandingOrdersAdapter(BasePlatformAdapter):
                              message_id=uuid.uuid4().hex, timestamp=datetime.now(tz=UTC))
         await self.handle_message(event)
 
-    async def send(self, chat_id, content, reply_to=None, metadata=None) -> SendResult:
-        """Forward the turn's reply (MEDIA: lines included) to the home chat."""
-        if _ctx is None:
-            return SendResult(success=False, error="plugin context missing")
-        # send_message blocks and schedules onto the gateway loop; run it off-loop to avoid a deadlock.
-        raw = await asyncio.to_thread(
-            _ctx.dispatch_tool, "send_message", {"action": "send", "target": self.deliver_to, "message": content})
+    async def _forward(self, text: str) -> SendResult:
+        """Deliver to the home chat with the documented `hermes send` CLI (text on stdin; MEDIA: lines
+        become native attachments). Out of process, so it cannot block or deadlock the gateway loop."""
+        exe = shutil.which("hermes") or str(Path.home() / ".local" / "bin" / "hermes")
+        proc = await asyncio.create_subprocess_exec(
+            exe, "send", "--to", self.deliver_to, "--json",
+            stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
         try:
-            ok = "error" not in json.loads(raw)
-        except Exception:
-            ok = False
-        logger.info("[standing_orders] forwarded reply to %s ok=%s: %s", self.deliver_to, ok, raw[:200])
-        return SendResult(success=ok, message_id=uuid.uuid4().hex, error=None if ok else raw[:200])
+            out, err = await asyncio.wait_for(proc.communicate(text.encode()), timeout=60)
+        except asyncio.TimeoutError:
+            proc.kill()
+            return SendResult(success=False, error="hermes send timed out")
+        ok = proc.returncode == 0
+        logger.info("[standing_orders] hermes send -> %s rc=%s %s", self.deliver_to, proc.returncode,
+                    (out or err).decode()[:200])
+        return SendResult(success=ok, message_id=uuid.uuid4().hex,
+                          error=None if ok else (err or out).decode()[:200])
+
+    async def send(self, chat_id, content, reply_to=None, metadata=None) -> SendResult:
+        return await self._forward(content)
+
+    # The gateway strips MEDIA: tags from the reply and sends each file through these methods.
+    async def send_image_file(self, chat_id, image_path, caption=None, **kwargs) -> SendResult:
+        return await self._forward(f"{caption or ''}\nMEDIA:{image_path}")
+
+    async def send_document(self, chat_id, file_path, caption=None, **kwargs) -> SendResult:
+        return await self._forward(f"{caption or ''}\nMEDIA:{file_path}")
+
+    async def send_video(self, chat_id, video_path, caption=None, **kwargs) -> SendResult:
+        return await self._forward(f"{caption or ''}\nMEDIA:{video_path}")
 
     async def get_chat_info(self, chat_id):
         return {"name": "Standing Orders", "type": "dm"}
 
 
 def register_platform(ctx) -> None:
-    global _ctx
-    _ctx = ctx
     ctx.register_platform(
         name=PLATFORM,
         label="Standing Orders",
         adapter_factory=StandingOrdersAdapter,
         check_fn=lambda: True,
         validate_config=lambda config: True,
+        env_enablement_fn=lambda: {"deliver_to": "telegram"},  # enabled whenever the plugin is
         trusted_inbound=True,  # camera events have no human sender
         display_tier="minimal",
         emoji="📷",
