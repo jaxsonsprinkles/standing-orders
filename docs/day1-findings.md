@@ -38,3 +38,6 @@
 - Next: option B (stop the launchd service, run `hermes gateway run` from an authorized Terminal), then
   re-run `echo PROBE_CAMERA > ~/.hermes/plugin-data/standing-orders/fire.txt` and read `camera.txt`.
 - Fallback: option C (Desktop renderer posts frames to `plugin_api.py`).
+- Option B RESULT: with the gateway started by the user from Terminal, `PROBE_CAMERA` returns
+  `frame (1080, 1920, 3) mean=96.6`. Option B works. (A gateway process wrapped in `osascript` was also
+  visible; whether that wrapper explains the permission is not yet checked.)
