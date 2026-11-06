@@ -12,6 +12,8 @@ Operator shapes:
   {"within": {"seconds": N, "after": rule_a, "then": rule_b}}
                                               TRUE while `then` is TRUE within N s of `after` rising
 """
+import math
+
 from .clock import Clock
 from .program import ProgramError, Rule
 from .types import Tri
@@ -106,7 +108,7 @@ class _Within(_Node):
 
 def _seconds(body: dict, op: str) -> float:
     s = body.get("seconds")
-    if isinstance(s, bool) or not isinstance(s, (int, float)) or s <= 0:
+    if isinstance(s, bool) or not isinstance(s, (int, float)) or not math.isfinite(s) or s <= 0:
         raise ProgramError(f"{op}: 'seconds' must be a positive number, got {s!r}")
     return float(s)
 

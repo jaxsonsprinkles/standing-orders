@@ -71,3 +71,20 @@ def test_export_clip_roundtrip(tmp_path):
     out = export_clip(rb.window(1, 5), str(tmp_path / "clips" / "e.mp4"))
     cap = cv2.VideoCapture(out)
     assert cap.isOpened() and int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) == 5
+
+
+def test_avf_source_read_accepts_dark_frames_after_warmup():
+    import numpy as np
+    from standing_orders.sources.avf_source import AvfSource
+
+    class Cap:
+        def __init__(self): self.n = 0
+        def read(self):
+            self.n += 1
+            return True, np.full((4, 4, 3), 50 if self.n == 1 else 0, np.uint8)  # lit warmup, then lights off
+        def release(self): pass
+
+    src = AvfSource(time_fn=lambda: 0.0, sleep_fn=lambda s: None)
+    src._cap = Cap()
+    assert src._grab(1.0, min_mean=1.0) is not None   # warmup consumed the lit frame
+    assert src.read() is not None                      # dark room: still a frame, loop continues

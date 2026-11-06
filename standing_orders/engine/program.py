@@ -96,6 +96,8 @@ def validate_program(program: WatchProgram) -> None:
     if not program.predicates:
         raise ProgramError("program needs at least one predicate")
     for name, spec in program.predicates.items():
+        if not isinstance(spec.zone, str) or not isinstance(spec.prompt, str):
+            raise ProgramError(f"predicate {name!r}: 'zone' and 'prompt' must be strings")
         if spec.zone != FRAME_ZONE and spec.zone not in program.zones:
             raise ProgramError(f"predicate {name!r} uses undefined zone {spec.zone!r}")
         if not spec.prompt.strip():
@@ -104,9 +106,9 @@ def validate_program(program: WatchProgram) -> None:
     undefined = referenced_predicates(program.rule) - program.predicates.keys()
     if undefined:
         raise ProgramError(f"rule uses undefined predicates: {', '.join(sorted(undefined))}")
-    if program.action.mode not in ACTION_MODES:
+    if program.action.mode not in ACTION_MODES:  # unhashable modes fail the membership test too
         raise ProgramError(f"action.mode must be one of {ACTION_MODES}, got {program.action.mode!r}")
-    if not program.action.instruction.strip():
+    if not isinstance(program.action.instruction, str) or not program.action.instruction.strip():
         raise ProgramError("action.instruction is empty")
     for field_, value in (("cooldown_seconds", program.cooldown_seconds),
                           ("vision_budget_per_hour", program.vision_budget_per_hour)):

@@ -7,6 +7,8 @@ import asyncio
 import pathlib
 from typing import Callable, Protocol
 
+import cv2
+
 from .cascade import Cascade
 from .clock import Clock
 from .program import WatchProgram
@@ -90,14 +92,17 @@ class Runner:
             values = self._loop.run_until_complete(st.cascade.update(frame))
             if st.rules.update(values) is not Tri.TRUE or now < st.quiet_until:
                 continue
-            st.quiet_until = now + st.program.cooldown_seconds
             true_verdicts = [v for v in st.cascade.verdicts.values() if v.value is Tri.TRUE]
             event = Event(
                 order_id=oid, fired_at=now, kind=self.kind, id=f"{oid}@{now:.3f}",
                 reason="; ".join(v.reason for v in true_verdicts if v.reason) or st.program.text,
                 confidence=min((v.confidence for v in true_verdicts), default=0.0),
                 predicates=dict(values))
-            event.clip_path = self._clip(event, now)
+            try:
+                event.clip_path = self._clip(event, now)
+            except (OSError, ValueError, cv2.error):
+                event.clip_path = None  # a clip problem must not swallow the firing
+            st.quiet_until = now + st.program.cooldown_seconds
             self.sink.emit(event)
             events.append(event)
         return events

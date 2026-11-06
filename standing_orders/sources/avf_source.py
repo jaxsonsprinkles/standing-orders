@@ -21,18 +21,18 @@ class AvfSource:
         self._cap = None
         self._next_at = 0.0
 
-    def _grab(self, deadline: float):
-        # first frames are often black while exposure settles
+    def _grab(self, deadline: float, min_mean: float = -1.0):
         while self._time() < deadline:
             ok, image = self._cap.read()
-            if ok and image is not None and image.mean() > 1:
+            if ok and image is not None and image.mean() > min_mean:
                 return image
             self._sleep(0.1)
         return None
 
     def start(self) -> None:
+        # warmup: the first frames are often black while exposure settles, so wait for a lit one
         self._cap = cv2.VideoCapture(self.index, cv2.CAP_AVFOUNDATION)
-        if not self._cap.isOpened() or self._grab(self._time() + self.warmup_seconds) is None:
+        if not self._cap.isOpened() or self._grab(self._time() + self.warmup_seconds, min_mean=1.0) is None:
             self.stop()
             raise CameraError(
                 f"no frame from camera {self.index}: grant camera access to the app that launched "

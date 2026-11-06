@@ -64,3 +64,10 @@ def test_slow_change_accumulates_against_last_passed_reference():
         img[150:190, 140:180] = (100 + 155 * k / 40)
         fired |= g.update(img)["desk"]
     assert fired
+
+
+def test_sliver_polygon_still_has_pixels():
+    g = ChangeGate({"sliver": [(0.5, 0.5), (0.5005, 0.5), (0.5, 0.5005)]})
+    assert g.update(scene(False)) == {"sliver": True}   # no NaN: first frame passes
+    g.update(scene(True))  # must not raise
+    assert g._mask("sliver", (54, 96)).any()

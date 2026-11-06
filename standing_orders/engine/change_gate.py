@@ -30,6 +30,7 @@ class ChangeGate:
             else:
                 pts = np.array([[round(x * (w - 1)), round(y * (h - 1))] for x, y in self.regions[name]], np.int32)
                 cv2.fillPoly(m, [pts], 1)
+                cv2.polylines(m, [pts], True, 1)  # a sliver still covers its outline pixels
             self._masks[name] = m.astype(bool)
         return self._masks[name]
 

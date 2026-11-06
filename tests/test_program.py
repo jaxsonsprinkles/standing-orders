@@ -70,3 +70,11 @@ def test_predicate_with_undefined_zone_rejected():
 def test_malformed_zone_points_rejected_at_parse():
     with pytest.raises(ProgramError, match="zones"):
         parse_program(mutated(zones={"desk": [[0, 0], [1], [1, 1]]}))
+
+
+def test_non_string_prompt_or_zone_rejected_cleanly():
+    for field_, bad in (("prompt", 5), ("zone", ["desk"])):
+        d = copy.deepcopy(MUG)
+        d["predicates"]["mug"][field_] = bad
+        with pytest.raises(ProgramError, match="strings"):
+            validate_program(parse_program(d))

@@ -87,3 +87,29 @@ def test_event_gets_a_clip_from_the_recording(tmp_path):
 def test_end_of_source_sets_ended(tmp_path):
     _, _, runner = run_scenario(tmp_path, [(QUIET, 2)])
     assert runner.ended
+
+
+def test_clip_failure_still_emits_event_and_starts_cooldown(tmp_path, monkeypatch):
+    import standing_orders.storage.clips as clips
+    monkeypatch.setattr(clips, "export_clip", lambda *a, **k: (_ for _ in ()).throw(OSError("no codec")))
+    rb = RingBuffer(str(tmp_path / "rb"))
+    events, _, _ = run_scenario(tmp_path, [(HAND_ON_MUG, 3), (ALONE, 40)], recorder=rb, clip_dir=str(tmp_path / "c"))
+    assert len(events) == 1 and events[0].clip_path is None
+
+
+def test_disarmed_and_edited_orders_are_dropped_or_rebuilt(tmp_path):
+    program = parse_program(MUG)
+    store = StaticStore([program])
+    clock = FakeClock()
+    segs = [(ALONE, 30)]
+    source = FileSource(write_video(str(tmp_path / "c.mp4"), segs), sample_fps=1.0)
+    source.start()
+    runner = Runner(source, store, lambda p: Cascade(p, ScriptedVerifier(script_for(segs), clock), clock),
+                    clock, ListSink())
+    runner.step()
+    assert set(runner._states) == {"ord_mug_left"}
+    store._programs = []
+    runner.step()
+    assert runner._states == {}
+    runner.close()
+    source.stop()

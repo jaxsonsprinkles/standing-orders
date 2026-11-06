@@ -96,3 +96,9 @@ def test_bad_rules_rejected(bad):
 def test_referenced_predicates():
     assert referenced_predicates(MUG_RULE) == {"mug", "person"}
     assert referenced_predicates({"within": {"seconds": 5, "after": "x", "then": {"not": "y"}}}) == {"x", "y"}
+
+
+@pytest.mark.parametrize("secs", [float("nan"), float("inf"), -1, "5", True])
+def test_non_finite_or_bad_seconds_rejected(secs):
+    with pytest.raises(ProgramError):
+        compile_rule({"held_for": {"seconds": secs, "of": "a"}})

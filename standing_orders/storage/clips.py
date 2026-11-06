@@ -12,6 +12,8 @@ def export_clip(frames: list[tuple[float, pathlib.Path]], out_path: str, fps: fl
     if not frames:
         raise ValueError("no frames to export")
     first = cv2.imread(str(frames[0][1]))
+    if first is None:
+        raise ValueError(f"unreadable frame: {frames[0][1]}")
     h, w = first.shape[:2]
     pathlib.Path(out_path).parent.mkdir(parents=True, exist_ok=True)
     for codec in ("avc1", "mp4v"):  # avc1 (H.264) plays inline in chats; mp4v is the fallback
