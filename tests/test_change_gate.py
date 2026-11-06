@@ -36,7 +36,7 @@ def test_change_outside_zone_is_ignored_by_that_zone():
     g = ChangeGate({"desk": DESK, FRAME_ZONE: []})
     g.update(scene(False))
     img = scene(False)
-    img[10:100, 20:90] = (40, 40, 200)  # person in the upper-left, above the desk zone (y > 0.55)
+    img[10:100, 20:90] = (20, 20, 20)  # person in the upper-left, above the desk zone (y > 0.55)
     r = g.update(img)
     assert r["desk"] is False and r[FRAME_ZONE] is True
 

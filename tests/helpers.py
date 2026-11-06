@@ -10,7 +10,7 @@ def scene(mug: bool, person: bool = False, brightness: int = 100) -> np.ndarray:
     if mug:
         img[150:190, 140:180] = 255
     if person:
-        img[20:200, 20:90] = (40, 40, 200)
+        img[20:200, 20:90] = (20, 20, 20)
     return img
 
 
