@@ -1,10 +1,8 @@
 import ast
 import pathlib
 
-import pytest
-
 from standing_orders.engine.clock import FakeClock
-from standing_orders.engine.program import OPERATORS, parse_program, validate_program
+from standing_orders.engine.program import OPERATORS
 from standing_orders.engine.types import Tri
 from standing_orders.storage.db import connect
 
@@ -35,10 +33,3 @@ def test_engine_has_no_hermes_imports():
                    [node.module or ""] if isinstance(node, ast.ImportFrom) and node.level == 0 else []
             for m in mods:
                 assert not m.split(".")[0] in ("gateway", "hermes_cli", "agent", "tools", "hermes_constants"), (path, m)
-
-
-def test_stubs_not_implemented():
-    with pytest.raises(NotImplementedError):
-        parse_program({})
-    with pytest.raises(NotImplementedError):
-        validate_program(None)
