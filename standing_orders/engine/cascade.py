@@ -34,6 +34,7 @@ class CascadeStats:
     budget_exhausted: bool = False   # the latest vision call was refused by the budget
     verifier_errors: int = 0
     unresolved_frames: int = 0  # frames that ended with a predicate left UNKNOWN by failure/budget
+    confirm_suppressed: int = 0  # fires the Confirm step refused
 
 
 def _unknown(names, reason: str) -> dict[str, Verdict]:
@@ -150,6 +151,32 @@ class Cascade:
             self._pending.discard(n)
             self.stats.t1_decided += 1
         return rest
+
+    async def confirm(self, frames: list[Frame]) -> Verdict:
+        """Last check before a fire: re-ask the verifier (never T1) about every predicate that has a
+        TRUE/FALSE value, on each given frame. TRUE only if every frame agrees with the current values.
+        Anything else (disagreement, UNKNOWN, budget exhausted, verifier error) is not TRUE, so the
+        caller suppresses: fail closed. Each frame costs one vision call (stats.t2_calls, budget)."""
+        claimed = {n: v.value for n, v in self.verdicts.items() if v.value is not Tri.UNKNOWN}
+        if not frames or not claimed:
+            return Verdict(Tri.UNKNOWN, 0.0, "confirm: nothing to confirm")
+        specs = {n: self.program.predicates[n] for n in claimed}
+        confidence = 1.0
+        for i, frame in enumerate(frames):
+            if not self._spend():
+                return Verdict(Tri.UNKNOWN, 0.0, "confirm: vision budget exhausted")
+            self.stats.t2_calls += 1
+            try:
+                crops = [self._crop(frame, s.zone) for s in specs.values()]
+                got = await self.verifier.check(crops, specs)
+                bad = [n for n, want in claimed.items() if not isinstance(got.get(n), Verdict) or got[n].value is not want]
+            except Exception as exc:
+                self.stats.verifier_errors += 1
+                return Verdict(Tri.UNKNOWN, 0.0, f"confirm: verifier error: {type(exc).__name__}")
+            if bad:
+                return Verdict(Tri.FALSE, 0.0, f"confirm: frame {i + 1}/{len(frames)} disagrees on {', '.join(bad)}")
+            confidence = min(confidence, *(got[n].confidence for n in claimed))
+        return Verdict(Tri.TRUE, confidence, f"confirmed on {len(frames)} frames")
 
     async def update(self, frame: Frame) -> dict[str, Tri]:
         """Return the current value of every predicate after this frame."""
