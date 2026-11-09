@@ -63,6 +63,7 @@ class EngineThread:
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
         self._cascades: dict[str, Cascade] = {}
+        self._budgets: dict[str, VisionBudget] = {}
         self._flushed: dict[str, tuple[int, ...]] = {}
         self.steps = 0
 
@@ -103,8 +104,11 @@ class EngineThread:
         verifier = CachedVerifier(
             self.verifier_factory(program) if self.verifier_factory else
             LlmVerifier(self.llm, clock=self.clock, max_calls_per_hour=program.vision_budget_per_hour), conn)
-        cascade = Cascade(program, verifier, self.clock, embedder=self.embedder,
-                          budget=VisionBudget(program.vision_budget_per_hour, self.clock),
+        budget = self._budgets.get(program.id)  # survives rebuilds, so re-arming cannot reset the hourly cap
+        if budget is None or budget.per_hour != program.vision_budget_per_hour:
+            budget = self._budgets[program.id] = VisionBudget(program.vision_budget_per_hour, self.clock)
+        self._flushed[program.id] = (0,) * 4   # new cascade, new stats
+        cascade = Cascade(program, verifier, self.clock, embedder=self.embedder, budget=budget,
                           examples=load_examples(conn, program.id) if self.embedder else None)
         self._cascades[program.id] = cascade
         return cascade
