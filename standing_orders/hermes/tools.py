@@ -2,18 +2,20 @@
 files in the plugin data dir are the only shared state; nothing here talks to the engine thread directly."""
 import asyncio
 import concurrent.futures
-import importlib
-import inspect
 import json
 import time
 from typing import Any
 
 from ..engine.program import ProgramError
 from ..llm.compiler import compile_order, plan_text
+from ..engine.backtest import backtest as run_backtest
+from ..engine.corrections import apply_correction
+from ..engine.embedder import maybe_embedder
 from ..llm.llm_verifier import LlmVerifier
+from ..llm.verifier import CachedVerifier
 from ..storage.db import connect
 from ..storage.orders import OrderRepo
-from ..storage.ringbuffer import RingBuffer
+from ..storage.ringbuffer import RingBuffer, RingSource
 from .paths import Layout, data_dir
 
 TOOL_NAMES = ("so_create_order", "so_arm", "so_disarm", "so_list_orders", "so_status", "so_backtest", "so_correct")
@@ -28,30 +30,6 @@ def run_sync(coro) -> Any:
         return asyncio.run(coro)
     with concurrent.futures.ThreadPoolExecutor(1) as pool:
         return pool.submit(asyncio.run, coro).result()
-
-
-def _engine_fn(name: str, modules: tuple[str, ...]):
-    """Find an engine function by name. Engine modules are owned by another stream; absent -> None."""
-    for mod in modules:
-        try:
-            fn = getattr(importlib.import_module(f"standing_orders.engine.{mod}"), name, None)
-        except ImportError:
-            continue
-        if fn is not None:
-            return fn
-    return None
-
-
-def _call_flex(fn, **candidates):
-    """Call fn passing only the keyword arguments it declares (engine signatures may evolve)."""
-    params = inspect.signature(fn).parameters
-    kwargs = {k: v for k, v in candidates.items() if k in params}
-    missing = [n for n, p in params.items() if p.default is p.empty and p.kind in (p.POSITIONAL_OR_KEYWORD, p.KEYWORD_ONLY)
-               and n not in kwargs]
-    if missing:
-        raise NotImplementedError(f"{fn.__name__} needs arguments this tool cannot supply: {', '.join(missing)}")
-    result = fn(**kwargs)
-    return run_sync(result) if inspect.isawaitable(result) else result
 
 
 def _err(message: str, **extra) -> str:
@@ -144,49 +122,48 @@ class StandingOrdersTools:
         program = repo.get(oid) if oid else None
         if program is None:
             return _err(f"no such order: {oid!r}")
-        fn = _engine_fn("backtest", ("backtest", "replay", "runner"))
-        if fn is None:
-            return _err("backtest is not available in this build of the engine yet")
         minutes = float(args.get("minutes") or 10)
         ring = RingBuffer(str(self.layout.ring))
+        end = self._time()
+        source = RingSource(ring, end - minutes * 60, end)
+        conn = connect(self.layout.db)
+        source.start()
         try:
-            result = _call_flex(fn, program=program, ring=ring, ringbuffer=ring, recorder=ring,
-                                verifier=LlmVerifier(self.llm), repo=repo, minutes=minutes,
-                                seconds=minutes * 60, clip_dir=str(self.layout.clips), clips_dir=str(self.layout.clips))
-        except NotImplementedError as e:
-            return _err(f"backtest is not available yet: {e}")
+            result = run_backtest(program, source, CachedVerifier(LlmVerifier(self.llm), conn),
+                                  embedder=maybe_embedder(), max_t2_calls=int(args.get("max_vision_calls") or 10),
+                                  clip_dir=str(self.layout.clips))
         except Exception as e:
             return _err(f"backtest failed: {type(e).__name__}: {e}")
-        get = (lambda k, d=None: result.get(k, d)) if isinstance(result, dict) else (lambda k, d=None: getattr(result, k, d))
-        events = get("events", []) or []
+        finally:
+            source.stop()
+        repo.delete_backtest_events(oid)
+        for e in result.events:
+            repo.add_event(e)
         return json.dumps({
             "order_id": oid, "window_minutes": minutes,
             "would_have_fired": [{"id": e.id, "at": e.fired_at, "reason": e.reason, "confidence": e.confidence,
-                                  "clip": e.clip_path} if not isinstance(e, dict) else e for e in events],
-            "frames_checked": get("frames_checked", get("frames")),
-            "unresolved": get("unresolved", get("unknown")),
-            "note": "Backtests never send messages. Share clips with MEDIA:<path> only if the user asks."})
+                                  "clip": e.clip_path} for e in result.events],
+            "frames_checked": result.frames_checked, "vision_calls": result.t2_calls,
+            "unresolved_frames": result.unresolved_frames,
+            "note": "Unresolved frames ran out of vision calls and were NOT treated as no-match. "
+                    "Backtests never send messages. Share clips with MEDIA:<path> only if the user asks."})
 
     # so_correct
     def correct(self, args: dict, **kw) -> str:
         eid, label, note = args.get("event_id"), args.get("label"), args.get("note") or ""
-        repo = self.repo()
+        event = self.repo().get_event(eid) if eid else None
+        if event is None:
+            return _err(f"no such event: {eid!r}")
+        conn = connect(self.layout.db)
         try:
-            repo.label_event(eid, label, note)
-        except (ValueError, KeyError) as e:
-            return _err(str(e).strip("'"))
-        applied = "label saved"
-        fn = _engine_fn("apply_correction", ("corrections", "correction", "learning", "cascade"))
-        if fn is not None:
-            try:
-                _call_flex(fn, event=repo.get_event(eid), event_id=eid, label=label, note=note, repo=repo,
-                           ring=RingBuffer(str(self.layout.ring)))
-                applied = "label saved and applied to this order's examples"
-            except Exception as e:
-                applied = f"label saved; learning step failed: {type(e).__name__}: {e}"
-        else:
-            applied = "label saved; the learning step is not available in this build yet"
-        return json.dumps({"event_id": eid, "label": label, "result": applied})
+            res = apply_correction(
+                conn, event["order_id"], eid, label, args.get("predicate"), note, embedder=maybe_embedder(),
+                verifier_factory=lambda clock: CachedVerifier(LlmVerifier(self.llm), conn),
+                clip_dir=str(self.layout.clips))
+        except Exception as e:
+            return _err(f"correction failed: {type(e).__name__}: {e}")
+        return json.dumps({"event_id": eid, "label": label, "accepted": res.accepted, "flipped": res.flipped,
+                           "broken_events": res.broken, "result": res.message})
 
 
 def _schema(name: str, description: str, properties: dict | None = None, required: list | None = None) -> dict:
@@ -214,8 +191,9 @@ SCHEMAS = {
         "frames checked and how many were unresolved. Sends nothing.",
         {**_ORDER_ID, "minutes": {"type": "number", "description": "How far back to replay (default 10)"}}, ["order_id"]),
     "so_correct": _schema(
-        "so_correct", "Mark a fired event as correct or wrong so the order improves.",
+        "so_correct", "Mark a fired event correct or wrong. A wrong label saves the crop as a counter-example, then replays every labeled event; the change is kept only if this event stops firing and no correct one breaks.",
         {"event_id": {"type": "string"}, "label": {"type": "string", "enum": ["correct", "wrong"]},
+         "predicate": {"type": "string", "description": "For label=wrong: the predicate that was falsely true (optional)"},
          "note": {"type": "string", "description": "What was actually in view (optional)"}}, ["event_id", "label"]),
 }
 
