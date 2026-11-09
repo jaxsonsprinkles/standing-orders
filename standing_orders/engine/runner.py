@@ -104,6 +104,7 @@ class Runner:
                 event.clip_path = None  # a clip problem must not swallow the firing
             st.quiet_until = now + st.program.cooldown_seconds
             self.sink.emit(event)
+            st.cascade.stats.fires += 1
             events.append(event)
         return events
 
