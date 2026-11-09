@@ -1,15 +1,13 @@
-"""Gateway platform adapter. Day 1 stub: marks connected, can inject one fake event,
-and forwards the turn's reply to the home chat via the send_message tool."""
+"""Gateway platform adapter. Starts the engine thread on connect; a fired order becomes an agent turn;
+the turn's reply (with MEDIA:<clip>) is forwarded to the home chat with `hermes send`."""
 import asyncio
 import logging
 import shutil
-import time
 import uuid
 from pathlib import Path
 from datetime import datetime, UTC
 
 from gateway.config import Platform
-from hermes_constants import get_hermes_home
 from gateway.platforms.base import BasePlatformAdapter, SendResult
 from gateway.platforms.event import MessageEvent, MessageType
 
@@ -18,55 +16,49 @@ logger = logging.getLogger(__name__)
 PLATFORM = "standing_orders"
 CHAT_ID = "cam0"
 
-def _probe_camera() -> str:
-    """Day 1 spike: can the gateway process capture a frame? Replaced by AvfSource."""
-    try:
-        import cv2
-        cap = cv2.VideoCapture(0, cv2.CAP_AVFOUNDATION)
-        frame = None
-        for _ in range(30):
-            ok, f = cap.read()
-            if ok and f is not None and f.mean() > 1:
-                frame = f
-                break
-            time.sleep(0.1)
-        cap.release()
-        return "no frame" if frame is None else f"frame {frame.shape} mean={frame.mean():.1f}"
-    except Exception as e:
-        return f"error: {e}"
-
-
 class StandingOrdersAdapter(BasePlatformAdapter):
-    def __init__(self, config):
+    def __init__(self, config, llm=None):
         super().__init__(config, Platform(PLATFORM))
-        self.deliver_to = (config.extra or {}).get("deliver_to", "telegram")
+        extra = config.extra or {}
+        self.extra, self.llm = extra, llm
+        self.deliver_to = extra.get("deliver_to") or "telegram"
+        self._engine = None
+        self._loop = None
+
+    def _make_source(self):
+        from ..sources.avf_source import AvfSource
+        return AvfSource(int(self.extra.get("camera_index", 0)), float(self.extra.get("sample_fps", 1.0)))
+
+    def _engine_factory(self, layout, on_fire):
+        from .engine_thread import EngineThread
+        return EngineThread(
+            layout, self.llm, on_fire, source_factory=self._make_source,
+            retention_seconds=60 * float(self.extra.get("retention_minutes", 60)),
+            max_recording_bytes=int(self.extra.get("max_recording_mb", 2048)) << 20)
+
+    def _on_fire(self, message: str) -> None:
+        """Called from the engine thread: schedule the agent turn on the gateway loop."""
+        if self._loop is not None and not self._loop.is_closed():
+            fut = asyncio.run_coroutine_threadsafe(self.fire(message), self._loop)
+            fut.add_done_callback(lambda f: f.exception() and logger.error("[standing_orders] fire failed: %s", f.exception()))
 
     async def connect(self, *, is_reconnect: bool = False) -> bool:
-        self._trigger = get_hermes_home() / "plugin-data" / "standing-orders" / "fire.txt"
-        self._trigger.parent.mkdir(parents=True, exist_ok=True)
-        self._watch_task = asyncio.create_task(self._watch_trigger())
+        """Never blocks and never fails on camera trouble: the engine thread reports it via so_status."""
+        from .paths import Layout, data_dir
+        self._loop = asyncio.get_running_loop()
+        self._engine = self._engine_factory(Layout(data_dir()), self._on_fire)
+        self._engine.start()
         self._mark_connected()
         return True
 
     async def disconnect(self) -> None:
-        self._watch_task.cancel()
+        if self._engine is not None:
+            await asyncio.to_thread(self._engine.stop)
+            self._engine = None
         self._mark_disconnected()
 
-    async def _watch_trigger(self) -> None:
-        """Day 1 spike: writing text to fire.txt fires a fake event. Replaced by the engine."""
-        while True:
-            await asyncio.sleep(1)
-            if self._trigger.exists():
-                text = self._trigger.read_text().strip()
-                self._trigger.unlink()
-                if text == "PROBE_CAMERA":
-                    result = await asyncio.to_thread(_probe_camera)
-                    (self._trigger.parent / "camera.txt").write_text(result)
-                elif text:
-                    await self.fire(text)
-
     async def fire(self, text: str) -> None:
-        """Start an agent turn as if an order fired."""
+        """Start an agent turn for a fired order."""
         source = self.build_source(chat_id=CHAT_ID, chat_name="Standing Orders", chat_type="dm",
                                    user_id=CHAT_ID, user_name="camera")
         event = MessageEvent(text=text, message_type=MessageType.TEXT, source=source,
@@ -112,7 +104,7 @@ def register_platform(ctx) -> None:
     ctx.register_platform(
         name=PLATFORM,
         label="Standing Orders",
-        adapter_factory=StandingOrdersAdapter,
+        adapter_factory=lambda config: StandingOrdersAdapter(config, llm=ctx.llm),
         check_fn=lambda: True,
         validate_config=lambda config: True,
         env_enablement_fn=lambda: {"deliver_to": "telegram"},  # enabled whenever the plugin is
