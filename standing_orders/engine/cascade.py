@@ -129,7 +129,9 @@ class Cascade:
             self._pending.update(todo)
             return
         self.verdicts.update(out)
-        self._pending.difference_update(todo)
+        unknown = {n for n, v in out.items() if v.value is Tri.UNKNOWN}   # a verifier that swallowed an error
+        self._pending.update(unknown)
+        self._pending.difference_update(set(todo) - unknown)
 
     def _run_t1(self, frame: Frame, todo: dict[str, PredicateSpec], now: float) -> dict[str, PredicateSpec]:
         """Decide what T1 can; return the predicates that still need the verifier (uncertain, T1 error,
@@ -144,7 +146,8 @@ class Cascade:
                 verdict = self._t1(n, spec, vecs[spec.zone])
             except Exception:  # a broken embedder degrades to T2, never to a firing
                 verdict = None
-            if verdict is None or now - self._last_attempt[n] >= self.heartbeat_seconds:
+            saved = verdict is not None and verdict.reason.startswith("t1: matches a saved")  # corrections beat the heartbeat
+            if verdict is None or (not saved and now - self._last_attempt[n] >= self.heartbeat_seconds):
                 rest[n] = spec
                 continue
             self.verdicts[n] = verdict

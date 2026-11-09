@@ -138,6 +138,7 @@ class StandingOrdersTools:
             source.stop()
         repo.delete_backtest_events(oid)
         for e in result.events:
+            e.id = f"bt:{e.id}"   # never collide with a live event fired at the same frame time
             repo.add_event(e)
         return json.dumps({
             "order_id": oid, "window_minutes": minutes,

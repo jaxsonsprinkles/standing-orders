@@ -76,6 +76,8 @@ def _as_dict(result: Any) -> dict:
 def _build(data: dict, sentence: str, order_id: str, source: str) -> WatchProgram:
     # identity fields are ours, not the model's
     data = {**data, "id": order_id, "text": sentence.strip(), "source": source}
+    if isinstance(data.get("action"), dict):  # the instruction comes from the user's sentence, never from what the model saw
+        data["action"] = {**data["action"], "instruction": f"Tell the user: {sentence.strip()} Attach the clip."}
     try:
         program = parse_program(data)
         validate_program(program)
