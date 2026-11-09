@@ -147,3 +147,8 @@ class FakeEmbedder:
         v = np.zeros(self.DIM, np.float32)
         v[-1] = 1.0
         return v
+
+
+def maybe_embedder(model_dir: str = DEFAULT_MODEL_DIR):
+    """The real embedder if its weights were downloaded at setup, else None (cascade then skips T1)."""
+    return ClipOnnxEmbedder(model_dir) if models_present(model_dir) else None

@@ -3,7 +3,6 @@
 No Hermes imports, so it is unit-testable with a FileSource. It never blocks the gateway loop (own daemon
 thread), reports camera trouble through status.json (tools read it as so_status) instead of raising, and
 hands fired events to `on_fire(message)` which the adapter forwards onto the gateway loop."""
-import inspect
 import json
 import logging
 import threading
@@ -11,11 +10,15 @@ import time
 from typing import Callable
 
 from ..engine.cascade import Cascade
+from ..engine.budget import VisionBudget
 from ..engine.clock import RealClock
+from ..engine.corrections import load_examples
+from ..engine.embedder import maybe_embedder
 from ..engine.program import WatchProgram
 from ..engine.runner import Runner
 from ..engine.types import Event
 from ..llm.llm_verifier import LlmVerifier
+from ..llm.verifier import CachedVerifier
 from ..storage.db import connect
 from ..storage.orders import OrderRepo
 from ..storage.ringbuffer import RingBuffer
@@ -56,10 +59,11 @@ class EngineThread:
         self.retry_seconds, self.status_seconds, self.flush_seconds = retry_seconds, status_seconds, flush_seconds
         self.stop_on_source_end = stop_on_source_end  # FileSource in tests/replay ends; a camera should be retried
         self.verifier_factory = verifier_factory
+        self.embedder = maybe_embedder()
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
         self._cascades: dict[str, Cascade] = {}
-        self._flushed: dict[str, tuple[int, int, int]] = {}
+        self._flushed: dict[str, tuple[int, ...]] = {}
         self.steps = 0
 
     # lifecycle
@@ -95,26 +99,24 @@ class EngineThread:
         return f
 
     def _cascade_factory(self, program: WatchProgram) -> Cascade:
-        verifier = (self.verifier_factory(program) if self.verifier_factory else
-                    LlmVerifier(self.llm, clock=self.clock, max_calls_per_hour=program.vision_budget_per_hour))
-        kwargs = {}
-        if "budget" in inspect.signature(Cascade.__init__).parameters:  # VisionBudget lands with the engine stream
-            try:
-                from ..engine.budget import VisionBudget
-                kwargs["budget"] = VisionBudget(program.vision_budget_per_hour, self.clock)
-            except Exception:
-                logger.info("[standing_orders] VisionBudget unavailable; LlmVerifier hourly cap only")
-        cascade = Cascade(program, verifier, self.clock, **kwargs)
+        conn = connect(self.layout.db)
+        verifier = CachedVerifier(
+            self.verifier_factory(program) if self.verifier_factory else
+            LlmVerifier(self.llm, clock=self.clock, max_calls_per_hour=program.vision_budget_per_hour), conn)
+        cascade = Cascade(program, verifier, self.clock, embedder=self.embedder,
+                          budget=VisionBudget(program.vision_budget_per_hour, self.clock),
+                          examples=load_examples(conn, program.id) if self.embedder else None)
         self._cascades[program.id] = cascade
         return cascade
 
     def _flush_counters(self, repo: OrderRepo) -> None:
         for oid, c in list(self._cascades.items()):
             s = c.stats
-            cur = (s.frames, s.t0_passed, s.t2_calls)
-            prev = self._flushed.get(oid, (0, 0, 0))
+            cur = (s.frames, s.t0_passed, s.t1_decided, s.t2_calls)  # fires: OrderRepo.emit counts them
+            prev = self._flushed.get(oid, (0,) * 4)
             if cur != prev:
-                repo.add_counters(oid, frames=cur[0] - prev[0], t0_passed=cur[1] - prev[1], t2_calls=cur[2] - prev[2])
+                d = [a - b for a, b in zip(cur, prev)]
+                repo.add_counters(oid, frames=d[0], t0_passed=d[1], t1_decided=d[2], t2_calls=d[3])
                 self._flushed[oid] = cur
 
     def _main(self) -> None:
