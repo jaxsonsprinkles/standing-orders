@@ -4,6 +4,7 @@ The Runner drives every armed order from one frame source. Per order it keeps a 
 values) and a RuleEvaluator (time logic). Time comes only from the injected clock, which follows the
 frame timestamps (Clock.observe), so recorded video and live video run identical code."""
 import asyncio
+from collections import deque
 import pathlib
 from typing import Callable, Protocol
 
@@ -45,12 +46,20 @@ class _OrderState:
 class Runner:
     def __init__(self, source, program_store: ProgramStore, cascade_factory: Callable[[WatchProgram], Cascade],
                  clock: Clock, sink, *, kind: str = "live", hysteresis_seconds: float = 0.0,
-                 recorder=None, clip_dir: str | None = None, clip_seconds: float = 20.0):
+                 recorder=None, clip_dir: str | None = None, clip_seconds: float = 20.0,
+                 confirm: bool = True, confirm_frames: int = 3, confirm_window_seconds: float = 6.0,
+                 confirm_quiet_seconds: float = 15.0):
         """recorder: optional RingBuffer fed every frame; with clip_dir, a fired event gets a clip
-        of the last clip_seconds. sink needs emit(event)."""
+        of the last clip_seconds. sink needs emit(event).
+        confirm: before a fire is emitted, cascade.confirm() re-checks `confirm_frames` frames spread over
+        the last `confirm_window_seconds`; anything but TRUE suppresses the event and silences the order
+        for `confirm_quiet_seconds`."""
         self.source, self.program_store, self.cascade_factory = source, program_store, cascade_factory
         self.clock, self.sink, self.kind, self.hysteresis = clock, sink, kind, hysteresis_seconds
         self.recorder, self.clip_dir, self.clip_seconds = recorder, clip_dir, clip_seconds
+        self.confirm, self.confirm_frames = confirm, max(1, confirm_frames)
+        self.confirm_window, self.confirm_quiet = confirm_window_seconds, confirm_quiet_seconds
+        self._recent: deque = deque(maxlen=64)
         self.ended = False
         self._states: dict[str, _OrderState] = {}
         self._loop = asyncio.new_event_loop()
@@ -69,6 +78,22 @@ class Runner:
                     program, self.cascade_factory(program),
                     RuleEvaluator(program.rule, self.clock, self.hysteresis))
 
+    def _confirm_frames(self, now: float) -> list:
+        """`confirm_frames` frames evenly spread over the recent window (fewer if there are fewer)."""
+        recent = [f for f in self._recent if f.timestamp >= now - self.confirm_window]
+        if len(recent) <= self.confirm_frames:
+            return recent
+        last = len(recent) - 1
+        return [recent[round(i * last / (self.confirm_frames - 1))] for i in range(self.confirm_frames)] \
+            if self.confirm_frames > 1 else [recent[-1]]
+
+    def _confirmed(self, st: "_OrderState", now: float) -> bool:
+        try:
+            verdict = self._loop.run_until_complete(st.cascade.confirm(self._confirm_frames(now)))
+        except Exception:  # fail closed
+            return False
+        return verdict.value is Tri.TRUE
+
     def _clip(self, event: Event, now: float) -> str | None:
         if self.recorder is None or self.clip_dir is None:
             return None
@@ -86,11 +111,16 @@ class Runner:
         now = self.clock.now()
         if self.recorder is not None:
             self.recorder.add(frame)
+        self._recent.append(frame)
         self._sync_orders()
         events = []
         for oid, st in self._states.items():
             values = self._loop.run_until_complete(st.cascade.update(frame))
             if st.rules.update(values) is not Tri.TRUE or now < st.quiet_until:
+                continue
+            if self.confirm and not self._confirmed(st, now):
+                st.quiet_until = now + self.confirm_quiet
+                st.cascade.stats.confirm_suppressed += 1
                 continue
             true_verdicts = [v for v in st.cascade.verdicts.values() if v.value is Tri.TRUE]
             event = Event(
