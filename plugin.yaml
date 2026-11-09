@@ -7,7 +7,13 @@ license: MIT
 tags: [vision, automation, camera, gateway]
 requires_hermes: ">=0.22.7"
 provides_tools:
+  - so_create_order
+  - so_arm
+  - so_disarm
+  - so_list_orders
   - so_status
+  - so_backtest
+  - so_correct
 python_dependencies:
   - "opencv-python-headless>=4.8,<5"
   - "onnxruntime>=1.17,<2"
