@@ -29,5 +29,5 @@ Added `dashboard/plugin_api.py` (+ manifest), `desktop/plugin.js`, `/orders`, `h
 `hermes plugins validate . --install-deps` passes; 170 tests pass.
 Not verified: the pane inside real Hermes Desktop (no screenshot; needs the app), the pane Wrong button uses the
 verification cache only (misses are UNKNOWN), per-predicate live values and zone drawing are not in the pane.
-Cut: sticky-note action order (Could, first cut), zone drawing, timeline scrubber.
+Sticky-note action order built (mode add_list_item, tool so_add_list_item, list shown in pane and /orders). Cut: zone drawing, timeline scrubber.
 Still yours: live gate (webcam to chat), clean-install in a fresh profile, demo recording, catalog PR, X post, form.
