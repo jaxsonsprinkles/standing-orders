@@ -23,3 +23,11 @@ sentence, never from model output.
 - LlmVerifier keeps its own hourly cap next to VisionBudget (redundant, harmless).
 - Platform toolset restriction needs `platform_toolsets.standing_orders: [standing_orders]` in config.yaml.
 - Unverified live: config_schema reaching adapter config, camera in the gateway, delivery of clips on a slow network.
+
+## Day 5 (Nov 9): pane, /orders, README
+Added `dashboard/plugin_api.py` (+ manifest), `desktop/plugin.js`, `/orders`, `hermes/pane_data.py`, README.
+`hermes plugins validate . --install-deps` passes; 170 tests pass.
+Not verified: the pane inside real Hermes Desktop (no screenshot; needs the app), the pane Wrong button uses the
+verification cache only (misses are UNKNOWN), per-predicate live values and zone drawing are not in the pane.
+Sticky-note action order built (mode add_list_item, tool so_add_list_item, list shown in pane and /orders). Cut: zone drawing, timeline scrubber.
+Still yours: live gate (webcam to chat), clean-install in a fresh profile, demo recording, catalog PR, X post, form.

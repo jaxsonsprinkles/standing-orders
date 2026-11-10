@@ -20,7 +20,7 @@ class PredicateSpec:
 
 @dataclass
 class Action:
-    mode: str                   # "agent_turn"
+    mode: str                   # "agent_turn" | "add_list_item"
     instruction: str
 
 
@@ -41,7 +41,7 @@ class ProgramError(ValueError):
     """Validation failure; message goes back to the compiler for one repair attempt."""
 
 
-ACTION_MODES = ("agent_turn",)
+ACTION_MODES = ("agent_turn", "add_list_item")
 FRAME_ZONE = "frame"
 
 
