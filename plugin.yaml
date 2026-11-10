@@ -7,11 +7,19 @@ license: MIT
 tags: [vision, automation, camera, gateway]
 requires_hermes: ">=0.22.7"
 provides_tools:
+  - so_create_order
+  - so_arm
+  - so_disarm
+  - so_list_orders
   - so_status
+  - so_backtest
+  - so_correct
 python_dependencies:
   - "opencv-python-headless>=4.8,<5"
   - "onnxruntime>=1.17,<2"
   - "numpy>=2.0,<3"
+  - "tokenizers>=0.19,<1"
+  - "pyyaml>=6.0,<7"
 config_schema:
   camera_index: {type: int, default: 0, label: "Camera"}
   sample_fps: {type: float, default: 1.0}

@@ -69,7 +69,7 @@ def test_cooldown_suppresses_repeat_firing(tmp_path):
 
 def test_t0_keeps_verifier_calls_far_below_frame_count(tmp_path):
     segments = [(HAND_ON_MUG, 3), (ALONE, 20)]
-    events, verifier, runner = run_scenario(tmp_path, segments)
+    events, verifier, runner = run_scenario(tmp_path, segments, confirm=False)  # Confirm adds 3 calls per fire
     stats = next(iter(runner._states.values())).cascade.stats
     assert stats.frames == 23
     assert stats.t2_calls <= 3 and len(verifier.calls) == stats.t2_calls  # first frame + the person leaving
