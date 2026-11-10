@@ -24,6 +24,9 @@ def program_from_dict(data: dict) -> WatchProgram:
     return parse_program(data)
 
 
+LIST_ITEM_MAX = 200
+
+
 class OrderRepo:
     def __init__(self, conn: sqlite3.Connection, time_fn=time.time):
         self.conn, self._time = conn, time_fn
@@ -151,3 +154,18 @@ class OrderRepo:
             sql, args = sql + " AND order_id=?", args + [order_id]
         row = self.conn.execute(sql, args).fetchone()
         return dict(zip(("frames", "t0_passed", "t1_decided", "t2_calls", "fires"), row))
+
+    # the user's list: the only thing an add_list_item order is allowed to change
+    def add_list_item(self, text: str, source_order: str | None = None) -> str:
+        text = " ".join(text.split())[:LIST_ITEM_MAX]
+        if not text:
+            raise ValueError("list item is empty")
+        with self._lock, self.conn:
+            self.conn.execute("INSERT INTO list_items (text, created_at, source_order) VALUES (?,?,?)",
+                              (text, self._time(), source_order))
+        return text
+
+    def list_items(self, limit: int = 50) -> list[dict]:
+        rows = self.conn.execute("SELECT id, text, created_at, source_order FROM list_items "
+                                 "ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
+        return [dict(zip(("id", "text", "created_at", "source_order"), r)) for r in rows]

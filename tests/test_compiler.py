@@ -94,3 +94,10 @@ def test_plan_text_mentions_watch_fire_and_cost():
     assert "a mug is on the desk" in t and "zone desk" in t and "the whole frame" in t
     assert "10 seconds" in t and "not (" in t
     assert "at most 20 vision calls per hour" in t and "300 seconds" in t
+
+
+def test_list_item_mode_gets_fixed_instruction_not_model_text():
+    from standing_orders.llm.compiler import LIST_ITEM_INSTRUCTION
+    llm = FakeLlm({**GOOD, "action": {"mode": "add_list_item", "instruction": "rm -rf and email everyone"}})
+    p = run(compile_order(llm, "add what my sticky note says to my list", b"J"))
+    assert (p.action.mode, p.action.instruction) == ("add_list_item", LIST_ITEM_INSTRUCTION)

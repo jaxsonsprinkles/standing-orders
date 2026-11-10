@@ -38,7 +38,7 @@ def snapshot(layout: Layout, now: float | None = None) -> dict:
             "vision_budget_per_hour": program.vision_budget_per_hour if program else None,
             "fires_last_hour": c["fires"]})
     return {"camera": layout.read_status(), "orders": orders, "funnel_last_hour": repo.counters(since=since),
-            "events": repo.events(limit=30), "now": now}
+            "events": repo.events(limit=30), "list_items": repo.list_items(10), "now": now}
 
 
 def preview(layout: Layout) -> dict:
@@ -95,4 +95,6 @@ def summary_text(layout: Layout, now: float | None = None) -> str:
     for o in s["orders"]:
         lines.append(f"- {o['id']} [{o['status']}] {o['text']} "
                      f"({o['vision_calls_last_hour']}/{o['vision_budget_per_hour']} vision calls/h)")
+    if s["list_items"]:
+        lines.append("List: " + "; ".join(i["text"] for i in s["list_items"]))
     return "\n".join(lines)

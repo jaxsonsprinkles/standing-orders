@@ -92,6 +92,9 @@ function Pane({ ctx }) {
     jsx('div', { className: 'font-medium', children: 'Orders' }),
     snap.orders.length ? snap.orders.map(o => jsx(OrderCard, { o, act }, o.id))
                        : jsx('div', { className: dim, children: 'No orders. Describe one in chat.' }),
+    snap.list_items?.length ? h('div', { className: 'flex flex-col gap-1' },
+      jsx('div', { className: 'font-medium', children: 'List' }),
+      ...snap.list_items.map(i => jsx('div', { key: i.id, children: `• ${i.text}` }))) : null,
     jsx('div', { className: 'font-medium', children: 'Events' }),
     snap.events.length ? snap.events.map(e => jsx(EventRow, { e, label }, e.id))
                        : jsx('div', { className: dim, children: 'Nothing has fired.' }))
