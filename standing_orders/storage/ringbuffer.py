@@ -61,3 +61,25 @@ class RingBuffer:
 
     def size_bytes(self) -> int:
         return sum(p.stat().st_size for p in self._files())
+
+
+class RingSource:
+    """FrameSource over a recorded window of a RingBuffer, for backtests."""
+
+    def __init__(self, ring: RingBuffer, start: float, end: float, source_id: str = "ring"):
+        self.ring, self.start_t, self.end_t, self.source_id = ring, start, end, source_id
+        self._frames: list[tuple[float, pathlib.Path]] = []
+
+    def start(self) -> None:
+        self._frames = self.ring.window(self.start_t, self.end_t)
+
+    def read(self) -> Frame | None:
+        while self._frames:
+            t, path = self._frames.pop(0)
+            image = cv2.imread(str(path))
+            if image is not None:  # pruned or corrupt files are skipped
+                return Frame(image, t, self.source_id)
+        return None
+
+    def stop(self) -> None:
+        self._frames = []
