@@ -14,6 +14,7 @@ provides_tools:
   - so_status
   - so_backtest
   - so_correct
+  - so_add_list_item
 python_dependencies:
   - "opencv-python-headless>=4.8,<5"
   - "onnxruntime>=1.17,<2"

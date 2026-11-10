@@ -22,6 +22,9 @@ CREATE TABLE IF NOT EXISTS verifications (
   frame_hash TEXT, predicate_hash TEXT, verdict_json TEXT, created_at REAL,
   PRIMARY KEY (frame_hash, predicate_hash)
 );
+CREATE TABLE IF NOT EXISTS list_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, text TEXT NOT NULL, created_at REAL NOT NULL, source_order TEXT
+);
 CREATE TABLE IF NOT EXISTS counters (
   bucket_start REAL, order_id TEXT, frames INTEGER, t0_passed INTEGER,
   t1_decided INTEGER, t2_calls INTEGER, fires INTEGER,

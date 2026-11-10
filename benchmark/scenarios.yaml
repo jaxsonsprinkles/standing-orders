@@ -48,8 +48,8 @@ orders:
         seconds: 2
         of: note
     action:
-      mode: agent_turn
-      instruction: Read the note and add one item to the user's list. Do nothing else.
+      mode: add_list_item
+      instruction: Read the text on the note from the camera report, call so_add_list_item once with that text, then tell the user what you added. Do nothing else.
     cooldown_seconds: 300
     vision_budget_per_hour: 20
 
