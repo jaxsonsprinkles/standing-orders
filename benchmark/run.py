@@ -1,6 +1,8 @@
 """Run the benchmark with no camera and no Hermes: python benchmark/run.py [--scenario N ...] [--skip-could]
 Uses the committed T2 answers in benchmark/cache/. To re-check against a real model, run
 `hermes orders benchmark --live-vision` (it needs Hermes for model access)."""
+
+from __future__ import annotations
 import argparse
 import pathlib
 import sys

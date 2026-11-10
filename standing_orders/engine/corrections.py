@@ -5,6 +5,8 @@ How a correction takes effect: the crop becomes a saved example for the predicat
 "this is a real one", 0 = "this is not"). The Cascade's T1 treats a crop nearly identical to a saved
 example (cosine >= example_sim) as decided by that example, ahead of the prompt margins, so one
 correction fixes that exact look without retuning the prompt thresholds for everything else."""
+
+from __future__ import annotations
 import inspect
 import json
 import pathlib

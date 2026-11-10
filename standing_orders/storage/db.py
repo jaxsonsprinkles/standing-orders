@@ -1,4 +1,6 @@
 """SQLite schema, the bus between engine, tools and the pane. Plain sqlite3: no Hermes imports."""
+
+from __future__ import annotations
 import sqlite3
 
 SCHEMA = """

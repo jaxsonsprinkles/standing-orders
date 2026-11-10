@@ -1,4 +1,6 @@
 """Recorded video as a FrameSource. Timestamps are video time, so replay is deterministic."""
+
+from __future__ import annotations
 import cv2
 
 from ..engine.types import Frame

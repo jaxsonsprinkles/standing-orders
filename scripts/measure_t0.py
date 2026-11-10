@@ -1,5 +1,7 @@
 """Print the T0 score series for a clip, to tune the threshold and check lighting behavior.
 Usage: python scripts/measure_t0.py clip.mp4 [x1,y1;x2,y2;...]   (default: whole frame)"""
+
+from __future__ import annotations
 import pathlib
 import sys
 

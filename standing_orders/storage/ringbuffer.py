@@ -3,6 +3,8 @@
 Pruned by age (retention) and by total size (disk cap), oldest first. Age uses frame timestamps,
 not the wall clock, so it behaves the same in replay. Plain files: the pane and tools read it
 from other processes without coordination."""
+
+from __future__ import annotations
 import pathlib
 
 import cv2

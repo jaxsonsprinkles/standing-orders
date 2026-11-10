@@ -2,6 +2,8 @@
 
 macOS ties camera permission to the app that launched the process (docs/day1-findings.md), so a
 gateway under launchd gets no frames. start() reports that cleanly instead of hanging."""
+
+from __future__ import annotations
 import time
 
 import cv2

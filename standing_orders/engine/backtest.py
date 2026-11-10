@@ -1,4 +1,6 @@
 """Backtest: replay recorded footage through the same Runner with a FakeClock."""
+
+from __future__ import annotations
 import tempfile
 from dataclasses import dataclass, field
 

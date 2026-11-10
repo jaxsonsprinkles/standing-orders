@@ -3,6 +3,8 @@
 No Hermes imports, so it is unit-testable with a FileSource. It never blocks the gateway loop (own daemon
 thread), reports camera trouble through status.json (tools read it as so_status) instead of raising, and
 hands fired events to `on_fire(message)` which the adapter forwards onto the gateway loop."""
+
+from __future__ import annotations
 import json
 import logging
 import threading

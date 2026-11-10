@@ -1,5 +1,7 @@
 """Data behind the Desktop pane and /orders. Plain functions over the shared SQLite file and data dir:
 no FastAPI, no Hermes imports, so they run in pytest. The pane never talks to the engine thread."""
+
+from __future__ import annotations
 import base64
 import time
 

@@ -1,5 +1,7 @@
 """Day 1 camera probe. Run from an authorized Terminal: python scripts/probe_camera.py [index]
 Needs opencv-python-headless. Saves one frame to ./probe_frame.jpg and prints timing."""
+
+from __future__ import annotations
 import sys
 import time
 

@@ -1,5 +1,7 @@
 """Agent tools. Handlers run in whichever process the agent runs in (CLI, gateway, cron), so SQLite plus
 files in the plugin data dir are the only shared state; nothing here talks to the engine thread directly."""
+
+from __future__ import annotations
 import asyncio
 import concurrent.futures
 import json

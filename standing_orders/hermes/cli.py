@@ -1,4 +1,6 @@
 """`hermes orders ...`: setup, doctor, benchmark, purge. Registered with ctx.register_cli_command."""
+
+from __future__ import annotations
 import shutil
 import sys
 

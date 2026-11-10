@@ -3,6 +3,8 @@
 The Runner drives every armed order from one frame source. Per order it keeps a Cascade (predicate
 values) and a RuleEvaluator (time logic). Time comes only from the injected clock, which follows the
 frame timestamps (Clock.observe), so recorded video and live video run identical code."""
+
+from __future__ import annotations
 import asyncio
 from collections import deque
 import pathlib
