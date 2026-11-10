@@ -55,7 +55,7 @@ A sleeping Mac stops watching; the pane says so and the plugin does not keep the
 | Where | What |
 | --- | --- |
 | Chat | `/orders` shows camera state, last-hour counters and orders |
-| Agent tools | `so_create_order`, `so_backtest`, `so_arm`, `so_disarm`, `so_list_orders`, `so_correct`, `so_status` |
+| Agent tools | `so_create_order`, `so_backtest`, `so_arm`, `so_disarm`, `so_list_orders`, `so_correct`, `so_status`, `so_add_list_item` |
 | Terminal | `hermes orders setup`, `doctor [--camera]`, `benchmark [--live-vision]`, `purge` |
 | Hermes Desktop | "standing orders" pane: preview, order cards, events with Right/Wrong, funnel counters |
 
