@@ -1,5 +1,19 @@
 {
  "answers": {
+  "10|0.000|0|297768f4f089": {
+   "mug": {
+    "confidence": 0.95,
+    "crop_sha256": "d805f56e31607645",
+    "reason": "No coffee mug is visible on the desk.",
+    "value": "false"
+   },
+   "person": {
+    "confidence": 0.98,
+    "crop_sha256": "6b5e3f2f90d49b6d",
+    "reason": "The room appears empty; the large object is an unoccupied chair.",
+    "value": "false"
+   }
+  },
   "1|0.000|0|297768f4f089": {
    "mug": {
     "confidence": 0.99,
@@ -113,6 +127,504 @@
     "confidence": 0.99,
     "crop_sha256": "1ab3ab61b8b699a5",
     "reason": "A person wearing orange is visible in the room.",
+    "value": "true"
+   }
+  },
+  "2|0.000|0|297768f4f089": {
+   "mug": {
+    "confidence": 0.99,
+    "crop_sha256": "4e3b5f304c0727b3",
+    "reason": "A handled coffee mug sits on the desk.",
+    "value": "true"
+   },
+   "person": {
+    "confidence": 1.0,
+    "crop_sha256": "d934d3d23cb7eaa3",
+    "reason": "A person is seated in the room.",
+    "value": "true"
+   }
+  },
+  "2|12.000|0|8bcaf5d02dc4": {
+   "mug": {
+    "confidence": 0.58,
+    "crop_sha256": "91b4b0208494f92d",
+    "reason": "A blurry white mug-like vessel appears to be on the desk, though its shape is unclear.",
+    "value": "true"
+   }
+  },
+  "2|12.500|0|8bcaf5d02dc4": {
+   "mug": {
+    "confidence": 0.84,
+    "crop_sha256": "163f8d4e1a6e082c",
+    "reason": "No coffee mug is visible on the desk; only papers and indistinct objects appear.",
+    "value": "false"
+   }
+  },
+  "2|13.000|0|8bcaf5d02dc4": {
+   "mug": {
+    "confidence": 0.91,
+    "crop_sha256": "9e011a8e7f2ab28e",
+    "reason": "No coffee mug is visible on the desk; only papers and other items appear.",
+    "value": "false"
+   }
+  },
+  "2|13.500|0|297768f4f089": {
+   "mug": {
+    "confidence": 0.91,
+    "crop_sha256": "68fa3a605dd50fc9",
+    "reason": "No coffee mug is visible on the desk; a person holds a pale object at the right.",
+    "value": "false"
+   },
+   "person": {
+    "confidence": 0.99,
+    "crop_sha256": "86b63b765b86dc1f",
+    "reason": "A person is clearly visible standing at the right side of the room.",
+    "value": "true"
+   }
+  },
+  "2|14.000|0|8bcaf5d02dc4": {
+   "mug": {
+    "confidence": 0.97,
+    "crop_sha256": "7c4373009d976d02",
+    "reason": "The desk surface is empty; no coffee mug is visible.",
+    "value": "false"
+   }
+  },
+  "2|14.500|0|a4d5961a8a54": {
+   "person": {
+    "confidence": 0.98,
+    "crop_sha256": "540fda1e7ef6c20c",
+    "reason": "The room appears empty; a chair and desk are visible, but no person is present.",
+    "value": "false"
+   }
+  },
+  "3|0.000|0|297768f4f089": {
+   "mug": {
+    "confidence": 0.99,
+    "crop_sha256": "6df5e0b90c684ded",
+    "reason": "A handled coffee mug sits prominently on the desk.",
+    "value": "true"
+   },
+   "person": {
+    "confidence": 1.0,
+    "crop_sha256": "826312511644f9e5",
+    "reason": "A person is seated behind the desk.",
+    "value": "true"
+   }
+  },
+  "3|2.000|0|a4d5961a8a54": {
+   "person": {
+    "confidence": 0.99,
+    "crop_sha256": "7dd7a0574e46453c",
+    "reason": "A person is partially visible at the right edge of the room.",
+    "value": "true"
+   }
+  },
+  "3|3.500|0|a4d5961a8a54": {
+   "person": {
+    "confidence": 0.98,
+    "crop_sha256": "c19f7516878c4974",
+    "reason": "The room contains an empty chair and desk; no person is visible.",
+    "value": "false"
+   }
+  },
+  "3|7.000|0|a4d5961a8a54": {
+   "person": {
+    "confidence": 0.99,
+    "crop_sha256": "aac9f19d45de35c8",
+    "reason": "A person wearing an orange shirt is visible on the right side of the room.",
+    "value": "true"
+   }
+  },
+  "3|9.000|0|297768f4f089": {
+   "mug": {
+    "confidence": 0.99,
+    "crop_sha256": "0f5c6bc674933d94",
+    "reason": "A handled coffee mug sits on the desk.",
+    "value": "true"
+   },
+   "person": {
+    "confidence": 0.99,
+    "crop_sha256": "6ff0526851097f58",
+    "reason": "A person is seated in the room behind the desk.",
+    "value": "true"
+   }
+  },
+  "4|12.500|0|297768f4f089": {
+   "mug": {
+    "confidence": 0.91,
+    "crop_sha256": "4a4e91e197b09e47",
+    "reason": "A white handleless bowl-like vessel sits on the desk; it does not appear to be a coffee mug.",
+    "value": "false"
+   },
+   "person": {
+    "confidence": 0.99,
+    "crop_sha256": "f4ed5e23fc7f5d2f",
+    "reason": "A person wearing an orange shirt is visible in the room.",
+    "value": "true"
+   }
+  },
+  "4|13.000|0|8bcaf5d02dc4": {
+   "mug": {
+    "confidence": 0.93,
+    "crop_sha256": "0c00ffa76b987195",
+    "reason": "A white handleless bowl sits on the desk; it is not a coffee mug.",
+    "value": "false"
+   }
+  },
+  "4|16.000|0|a4d5961a8a54": {
+   "person": {
+    "confidence": 0.98,
+    "crop_sha256": "5d57ae16c0e631de",
+    "reason": "The room appears empty; a chair, desk, monitor, and other equipment are visible, but no person.",
+    "value": "false"
+   }
+  },
+  "4|18.000|0|8bcaf5d02dc4": {
+   "mug": {
+    "confidence": 0.96,
+    "crop_sha256": "1cabdbea47195903",
+    "reason": "A handleless bowl-shaped vessel sits on the desk; it does not appear to be a coffee mug.",
+    "value": "false"
+   }
+  },
+  "5|0.000|0|297768f4f089": {
+   "mug": {
+    "confidence": 0.94,
+    "crop_sha256": "8b568a2669bf4bc9",
+    "reason": "A small bowl-like container is on the desk, but no coffee mug is visible.",
+    "value": "false"
+   },
+   "person": {
+    "confidence": 0.99,
+    "crop_sha256": "280820f82b2d5be3",
+    "reason": "A person wearing an orange shirt is standing behind the chair.",
+    "value": "true"
+   }
+  },
+  "5|0.500|0|8bcaf5d02dc4": {
+   "mug": {
+    "confidence": 0.78,
+    "crop_sha256": "e9e53efa579d4881",
+    "reason": "No coffee mug is visible; the dim image shows papers and indistinct objects on the desk.",
+    "value": "false"
+   }
+  },
+  "5|1.000|0|297768f4f089": {
+   "mug": {
+    "confidence": 0.87,
+    "crop_sha256": "238c2ecbdf292935",
+    "reason": "A shallow bowl-like object is visible, not a recognizable coffee mug.",
+    "value": "false"
+   },
+   "person": {
+    "confidence": 0.83,
+    "crop_sha256": "ba5886f0b8e34cb1",
+    "reason": "The dark central shape appears to be an empty chair; no person is identifiable.",
+    "value": "false"
+   }
+  },
+  "5|2.000|0|8bcaf5d02dc4": {
+   "mug": {
+    "confidence": 0.92,
+    "crop_sha256": "2ea5ac1a6f3167d8",
+    "reason": "A bowl-like dish is visible on the desk, but no coffee mug is apparent.",
+    "value": "false"
+   }
+  },
+  "5|3.500|0|297768f4f089": {
+   "mug": {
+    "confidence": 0.78,
+    "crop_sha256": "1ba1ae85001f4458",
+    "reason": "A small bowl-like object is visible, but no coffee mug is clearly identifiable on the desk.",
+    "value": "false"
+   },
+   "person": {
+    "confidence": 0.96,
+    "crop_sha256": "35cb46e5fc7712a3",
+    "reason": "A person\u2019s silhouette is visible near the center of the room.",
+    "value": "true"
+   }
+  },
+  "5|4.500|0|8bcaf5d02dc4": {
+   "mug": {
+    "confidence": 0.78,
+    "crop_sha256": "e9a221ecf3463051",
+    "reason": "A small shallow dish is visible on the desk, but it has no discernible mug handle.",
+    "value": "false"
+   }
+  },
+  "5|5.000|0|297768f4f089": {
+   "mug": {
+    "confidence": 0.94,
+    "crop_sha256": "664743b3a228100f",
+    "reason": "A small bowl-like dish is on the desk; no coffee mug is visible.",
+    "value": "false"
+   },
+   "person": {
+    "confidence": 0.99,
+    "crop_sha256": "00f08eceeb252839",
+    "reason": "A person is clearly visible standing behind the chair.",
+    "value": "true"
+   }
+  },
+  "5|6.500|0|297768f4f089": {
+   "mug": {
+    "confidence": 0.18,
+    "crop_sha256": "162c4c4103d1fdb5",
+    "reason": "The image is very dark; no coffee mug is clearly identifiable on the desk.",
+    "value": "false"
+   },
+   "person": {
+    "confidence": 0.89,
+    "crop_sha256": "6ef3bbe8eb087c43",
+    "reason": "A person is visibly standing in the room, though details are obscured by darkness.",
+    "value": "true"
+   }
+  },
+  "5|7.000|0|297768f4f089": {
+   "mug": {
+    "confidence": 0.68,
+    "crop_sha256": "5694be858f189c10",
+    "reason": "A small vessel is visible on the desk, but it appears bowl-like rather than a coffee mug.",
+    "value": "false"
+   },
+   "person": {
+    "confidence": 0.97,
+    "crop_sha256": "d64bba2247e06252",
+    "reason": "A person is clearly standing behind the chair, reaching toward the doorway.",
+    "value": "true"
+   }
+  },
+  "5|8.000|0|297768f4f089": {
+   "mug": {
+    "confidence": 0.91,
+    "crop_sha256": "7e9ad2fb5e52241a",
+    "reason": "A small low-sided bowl is visible on the desk; no coffee mug is apparent.",
+    "value": "false"
+   },
+   "person": {
+    "confidence": 0.99,
+    "crop_sha256": "f7a36ab16bedfdab",
+    "reason": "A person is standing behind the chair in the room.",
+    "value": "true"
+   }
+  },
+  "6|0.000|0|297768f4f089": {
+   "mug": {
+    "confidence": 0.92,
+    "crop_sha256": "eac7d2ab4db2d8bc",
+    "reason": "No coffee mug is visible on the desk.",
+    "value": "false"
+   },
+   "person": {
+    "confidence": 0.99,
+    "crop_sha256": "6086f1b8f3399951",
+    "reason": "A person is visible walking through the room.",
+    "value": "true"
+   }
+  },
+  "6|1.000|0|297768f4f089": {
+   "mug": {
+    "confidence": 0.91,
+    "crop_sha256": "d62022e468f5c512",
+    "reason": "No coffee mug is visible on the desk.",
+    "value": "false"
+   },
+   "person": {
+    "confidence": 0.99,
+    "crop_sha256": "9ffb4aeadb491151",
+    "reason": "A person wearing an orange shirt is standing in the room.",
+    "value": "true"
+   }
+  },
+  "6|3.000|0|a4d5961a8a54": {
+   "person": {
+    "confidence": 0.99,
+    "crop_sha256": "cbee1ac54984dee9",
+    "reason": "A person wearing an orange shirt is visible standing behind the chair.",
+    "value": "true"
+   }
+  },
+  "7|0.000|0|8bcaf5d02dc4": {
+   "mug": {
+    "confidence": 0.98,
+    "crop_sha256": "da4db75e2d91a9e7",
+    "reason": "A white handled coffee mug sits on the desk at the left.",
+    "value": "true"
+   }
+  },
+  "7|10.000|0|297768f4f089": {
+   "mug": {
+    "confidence": 0.99,
+    "crop_sha256": "63f395cc093ba988",
+    "reason": "A white handled coffee mug sits on the desk at the left.",
+    "value": "true"
+   },
+   "person": {
+    "confidence": 0.98,
+    "crop_sha256": "ac1fc6ba4280a188",
+    "reason": "The room contains furniture and equipment, but no person is visible.",
+    "value": "false"
+   }
+  },
+  "7|11.500|0|8bcaf5d02dc4": {
+   "mug": {
+    "confidence": 0.99,
+    "crop_sha256": "9f26c0c22ca329d7",
+    "reason": "A handled white coffee mug is visible on the desk at the left.",
+    "value": "true"
+   }
+  },
+  "7|12.000|0|a4d5961a8a54": {
+   "person": {
+    "confidence": 0.99,
+    "crop_sha256": "930584380e0edd7f",
+    "reason": "The room appears empty; the large foreground object is an office chair, not a person.",
+    "value": "false"
+   }
+  },
+  "7|12.500|0|8bcaf5d02dc4": {
+   "mug": {
+    "confidence": 0.98,
+    "crop_sha256": "140e349257fabeb1",
+    "reason": "A handled coffee mug sits on the desk at the left.",
+    "value": "true"
+   }
+  },
+  "7|13.000|0|a4d5961a8a54": {
+   "person": {
+    "confidence": 0.97,
+    "crop_sha256": "a04e5ae68bc2de80",
+    "reason": "The room appears empty; the large foreground object is an office chair, not a person.",
+    "value": "false"
+   }
+  },
+  "7|14.000|0|8bcaf5d02dc4": {
+   "mug": {
+    "confidence": 0.98,
+    "crop_sha256": "ce86f5ece6e0a5f5",
+    "reason": "A handled coffee mug is visible on the left side of the desk.",
+    "value": "true"
+   }
+  },
+  "7|20.000|0|297768f4f089": {
+   "mug": {
+    "confidence": 0.98,
+    "crop_sha256": "ce86f5ece6e0a5f5",
+    "reason": "A handled coffee mug is visible on the desk at the left.",
+    "value": "true"
+   },
+   "person": {
+    "confidence": 0.95,
+    "crop_sha256": "3fe2f2405870f042",
+    "reason": "The room appears empty; the large dark object is a chair, not a person.",
+    "value": "false"
+   }
+  },
+  "7|20.000|1|297768f4f089": {
+   "mug": {
+    "confidence": 0.98,
+    "crop_sha256": "8fe16380cd6a46a1",
+    "reason": "A handled coffee mug sits on the desk at the left.",
+    "value": "true"
+   },
+   "person": {
+    "confidence": 0.98,
+    "crop_sha256": "be6d114208ddea58",
+    "reason": "The room contains a chair and desk, but no person is visible.",
+    "value": "false"
+   }
+  },
+  "7|20.000|2|297768f4f089": {
+   "mug": {
+    "confidence": 0.98,
+    "crop_sha256": "829c265f3959b76e",
+    "reason": "A handled ceramic mug sits on the desk.",
+    "value": "true"
+   },
+   "person": {
+    "confidence": 0.99,
+    "crop_sha256": "226e4735b9540160",
+    "reason": "The room appears empty; the large object is an unoccupied chair.",
+    "value": "false"
+   }
+  },
+  "7|8.000|0|8bcaf5d02dc4": {
+   "mug": {
+    "confidence": 0.97,
+    "crop_sha256": "8fa78a741eb9c671",
+    "reason": "A white handled mug sits on the desk at the left.",
+    "value": "true"
+   }
+  },
+  "7|8.500|0|8bcaf5d02dc4": {
+   "mug": {
+    "confidence": 0.98,
+    "crop_sha256": "fa3acf658e203cc1",
+    "reason": "A white handled coffee mug sits on the desk.",
+    "value": "true"
+   }
+  },
+  "7|9.000|0|297768f4f089": {
+   "mug": {
+    "confidence": 0.99,
+    "crop_sha256": "afddd8e91f1a9605",
+    "reason": "A handled coffee mug sits on the desk at the left.",
+    "value": "true"
+   },
+   "person": {
+    "confidence": 0.99,
+    "crop_sha256": "1e3456ff2d43366b",
+    "reason": "Part of a person is visible at the right side of the room.",
+    "value": "true"
+   }
+  },
+  "8|2.000|0|f3c63b741555": {
+   "note": {
+    "confidence": 0.99,
+    "crop_sha256": "d6bbd997b868e944",
+    "reason": "A person holds a bright yellow handwritten note reading \u201cBUY MILK\u201d toward the camera.",
+    "value": "true"
+   }
+  },
+  "8|2.000|1|f3c63b741555": {
+   "note": {
+    "confidence": 0.99,
+    "crop_sha256": "320d640a25a18c5c",
+    "reason": "A person holds a yellow-green sticky note with handwritten words up to the camera.",
+    "value": "true"
+   }
+  },
+  "8|2.000|2|f3c63b741555": {
+   "note": {
+    "confidence": 0.99,
+    "crop_sha256": "c7911b276ce2daed",
+    "reason": "A person holds a bright yellow-green handwritten note reading \u201cBUY MILK\u201d toward the camera.",
+    "value": "true"
+   }
+  },
+  "9|2.000|0|f3c63b741555": {
+   "note": {
+    "confidence": 0.99,
+    "crop_sha256": "2ba9de14efc043ed",
+    "reason": "A yellow handwritten sticky note is held up close to the camera.",
+    "value": "true"
+   }
+  },
+  "9|2.000|1|f3c63b741555": {
+   "note": {
+    "confidence": 0.99,
+    "crop_sha256": "876a389cd4f56b7d",
+    "reason": "A person holds a bright yellow-green handwritten sticky note up toward the camera.",
+    "value": "true"
+   }
+  },
+  "9|2.000|2|f3c63b741555": {
+   "note": {
+    "confidence": 0.99,
+    "crop_sha256": "f925c03b55d2317d",
+    "reason": "A person holds a yellow-green handwritten sticky note up close to the camera.",
     "value": "true"
    }
   }
