@@ -1,4 +1,6 @@
 """`/orders` in any chat: status of the camera and every order. Read-only; arming goes through the so_* tools."""
+
+from __future__ import annotations
 from .pane_data import summary_text
 from .paths import Layout, data_dir
 

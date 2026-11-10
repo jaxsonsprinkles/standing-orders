@@ -1,4 +1,6 @@
 """Where Standing Orders keeps its files. One directory, shared by the gateway, tool handlers and the pane."""
+
+from __future__ import annotations
 import json
 import pathlib
 import time

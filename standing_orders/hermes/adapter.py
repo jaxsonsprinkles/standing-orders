@@ -1,5 +1,7 @@
 """Gateway platform adapter. Starts the engine thread on connect; a fired order becomes an agent turn;
 the turn's reply (with MEDIA:<clip>) is forwarded to the home chat with `hermes send`."""
+
+from __future__ import annotations
 import asyncio
 import logging
 import shutil

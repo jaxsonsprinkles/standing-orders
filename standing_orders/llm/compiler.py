@@ -4,6 +4,8 @@ The model only fills in a fixed JSON shape. parse_program + validate_program dec
 acceptable, so no sentence (including an injected one) can introduce an operator the engine lacks.
 On a ProgramError the compiler makes ONE repair call with the error text; a second failure raises.
 Imports nothing from Hermes: `llm` is anything with `acomplete_structured` (ctx.llm in production)."""
+
+from __future__ import annotations
 import json
 import uuid
 from typing import Any, Protocol

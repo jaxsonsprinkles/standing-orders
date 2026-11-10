@@ -1,6 +1,8 @@
 """OrderRepo: orders, events and counters in SQLite. The bus between engine, tools and the pane.
 
 Plain sqlite3, no Hermes imports. Implements the Runner's ProgramStore (armed()) and sink (emit())."""
+
+from __future__ import annotations
 import dataclasses
 import json
 import sqlite3

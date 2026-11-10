@@ -12,6 +12,8 @@ Operator shapes:
   {"within": {"seconds": N, "after": rule_a, "then": rule_b}}
                                               TRUE while `then` is TRUE within N s of `after` rising
 """
+
+from __future__ import annotations
 import math
 
 from .clock import Clock

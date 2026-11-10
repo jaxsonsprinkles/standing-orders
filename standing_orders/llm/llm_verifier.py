@@ -3,6 +3,8 @@
 Contract (llm/verifier.py): never raises. Budget exhausted, LLM error or an unparseable answer
 gives Tri.UNKNOWN for every predicate, and UNKNOWN never causes a firing. Text visible in the
 camera image is untrusted data: it can describe the scene but can never change what happens."""
+
+from __future__ import annotations
 import collections
 import logging
 from typing import Any, Callable

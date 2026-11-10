@@ -4,6 +4,8 @@ Each region (a zone polygon, or the whole frame) is compared with the last frame
 gate, so slow changes accumulate until they cross the threshold instead of slipping through.
 Lighting: pixels are z-scored inside the region (zero mean, unit variance, with a std floor) before
 differencing, so a brightness or contrast shift alone, e.g. a lamp turning on, scores near zero."""
+
+from __future__ import annotations
 import cv2
 import numpy as np
 

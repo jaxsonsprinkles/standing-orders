@@ -1,4 +1,6 @@
 """Hourly vision-call budget (T2 and Confirm). Sliding 3600 s window on the injected clock."""
+
+from __future__ import annotations
 from collections import deque
 
 from .clock import Clock
