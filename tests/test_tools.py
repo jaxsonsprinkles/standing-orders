@@ -129,3 +129,10 @@ def test_registered_tools_match_plugin_yaml_exactly():
     assert sorted(declared) == sorted(r["name"] for r in registered) == sorted(T.TOOL_NAMES)
     for r in registered:
         assert r["schema"]["name"] == r["name"] and callable(r["handler"])
+
+
+def test_register_tools_does_not_touch_ctx_llm():
+    class Probe:   # like the catalog validator's capability probe: no `llm` attribute at all
+        def register_tool(self, **kw):
+            pass
+    T.register_tools(Probe())

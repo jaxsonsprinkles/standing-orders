@@ -199,8 +199,18 @@ SCHEMAS = {
 }
 
 
+class _LazyLlm:
+    """ctx.llm resolved on first use: the catalog validator's probe context has none at register time."""
+
+    def __init__(self, ctx):
+        self._ctx = ctx
+
+    def __getattr__(self, name):
+        return getattr(self._ctx.llm, name)
+
+
 def register_tools(ctx) -> None:
-    tools = StandingOrdersTools(ctx.llm)
+    tools = StandingOrdersTools(_LazyLlm(ctx))
     handlers = {"so_create_order": tools.create_order, "so_arm": tools.arm, "so_disarm": tools.disarm,
                 "so_list_orders": tools.list_orders, "so_status": tools.status,
                 "so_backtest": tools.backtest, "so_correct": tools.correct}
