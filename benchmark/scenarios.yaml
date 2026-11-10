@@ -135,5 +135,7 @@ scenarios:
     title: Quiet scene
     tests: Cost on quiet scenes
     quiet: true
-    notes: The clip is 16 s, not the 10 minutes the spec describes. Quiet-scene cost is extrapolated per hour from
-      the measured vision calls per second; the README must say so.
+    loop_seconds: 600   # ping-pong loop (forward, reverse, repeat) up to 10 minutes of video time
+    notes: The recorded clip is 16 s. The benchmark plays it forward then backward until 10 minutes of video time
+      have passed, so sensor noise is real and runs at real speed (slowing the clip would repeat frames and
+      understate noise). The README must say the 10 minutes are a loop of 16 s of footage.

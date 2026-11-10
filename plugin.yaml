@@ -18,6 +18,8 @@ python_dependencies:
   - "opencv-python-headless>=4.8,<5"
   - "onnxruntime>=1.17,<2"
   - "numpy>=2.0,<3"
+  - "tokenizers>=0.19,<1"
+  - "pyyaml>=6.0,<7"
 config_schema:
   camera_index: {type: int, default: 0, label: "Camera"}
   sample_fps: {type: float, default: 1.0}
