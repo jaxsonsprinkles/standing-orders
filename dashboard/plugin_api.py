@@ -1,4 +1,6 @@
 """Backend routes for the Desktop pane: /api/plugins/standing-orders/... Thin wrappers over pane_data."""
+
+from __future__ import annotations
 import sys
 from pathlib import Path
 

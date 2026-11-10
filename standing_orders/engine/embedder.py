@@ -1,4 +1,6 @@
 """T1 image/text embeddings. Implementations: ClipOnnxEmbedder (real), FakeEmbedder (tests)."""
+
+from __future__ import annotations
 import hashlib
 import os
 import pathlib

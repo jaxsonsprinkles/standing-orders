@@ -1,4 +1,6 @@
 """Standing Orders: Hermes plugin entry point. Keep imports light; adapter loads lazily."""
+
+from __future__ import annotations
 from pathlib import Path
 
 

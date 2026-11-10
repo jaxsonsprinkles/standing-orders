@@ -5,6 +5,8 @@ No Hermes imports. Time comes from a FakeClock that follows the video, so a 10-m
 T2 answers come from a recorded cache keyed by (scenario, video time, call index, predicates), never by
 pixels, so the same engine run asks the same questions on any machine. A question missing from the cache is
 reported as a cache miss and answered UNKNOWN; with a live LLM it is asked and recorded instead."""
+
+from __future__ import annotations
 import hashlib
 import json
 import pathlib

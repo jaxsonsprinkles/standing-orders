@@ -2,6 +2,8 @@
 
 Clips stay small because delivery can be slow (docs/day1-findings.md): frames are already downscaled
 by the RingBuffer, and playback is a time-lapse at `fps` frames per second."""
+
+from __future__ import annotations
 import pathlib
 
 import cv2

@@ -3,6 +3,8 @@
 T0 change gate -> (T1 local embedding check) -> T2 verifier, on the regions that changed. Unchanged
 regions keep their last value. Failure policy: a raising verifier or an exhausted vision budget makes
 the affected predicates UNKNOWN. UNKNOWN never fires, and nothing here ever raises into the Runner."""
+
+from __future__ import annotations
 from dataclasses import dataclass
 
 import cv2
