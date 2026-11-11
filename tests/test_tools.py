@@ -27,7 +27,7 @@ def with_frame(layout, ts=1000.0):
 
 def make(layout, *answers):
     t = [5000.0]
-    tools = T.StandingOrdersTools(FakeLlm(*answers), layout, time_fn=lambda: t[0])
+    tools = T.StandingOrdersTools(FakeLlm(*answers), layout, time_fn=lambda: t[0], snapshot_wait=0)
     tools.t = t
     return tools
 
@@ -44,6 +44,34 @@ def test_create_returns_plan_and_saves_draft(layout):
     assert tools.repo().status(out["order_id"]) == "draft" and tools.repo().armed() == []
     img = [b for b in tools.llm.calls[0]["input"] if b["type"] == "image"][0]
     assert img["data"][:2] == b"\xff\xd8"  # the ring buffer frame, as JPEG
+
+
+def test_create_ignores_model_supplied_paths(layout, tmp_path):
+    secret = tmp_path / "secret.jpg"
+    secret.write_bytes(b"\xff\xd8secret")
+    tools = make(layout, GOOD)
+    assert "no reference frame" in j(tools.create_order({"text": "mug", "reference_frame_path": str(secret)}))["error"]
+    assert tools.llm.calls == []
+
+
+def test_create_asks_idle_engine_for_one_unrecorded_snapshot(layout):
+    import threading, time
+
+    def engine():  # stands in for the idle engine thread
+        for _ in range(100):
+            if layout.snapshot_request.exists():
+                layout.snapshot_request.unlink()
+                layout.snapshot.write_bytes(cv2.imencode(".jpg", scene(True))[1].tobytes())
+                return
+            time.sleep(0.05)
+
+    t = threading.Thread(target=engine)
+    t.start()
+    tools = T.StandingOrdersTools(FakeLlm(GOOD), layout, snapshot_wait=5)
+    out = j(tools.create_order({"text": "mug"}))
+    t.join()
+    assert out["status"] == "draft"
+    assert not layout.snapshot.exists() and not any(layout.ring.glob("*.jpg"))  # used once, never recorded
 
 
 def test_create_errors_are_clear(layout):

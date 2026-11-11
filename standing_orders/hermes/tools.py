@@ -40,8 +40,10 @@ def _err(message: str, **extra) -> str:
 
 
 class StandingOrdersTools:
-    def __init__(self, llm, layout: Layout | None = None, *, layout_fn=None, time_fn=time.time):
+    def __init__(self, llm, layout: Layout | None = None, *, layout_fn=None, time_fn=time.time,
+                 snapshot_wait: float = 20.0):
         self.llm, self._layout, self._layout_fn, self._time = llm, layout, layout_fn, time_fn
+        self.snapshot_wait = snapshot_wait
 
     @property
     def layout(self) -> Layout:
@@ -52,20 +54,34 @@ class StandingOrdersTools:
     def repo(self) -> OrderRepo:
         return OrderRepo(connect(self.layout.db), time_fn=self._time)
 
+    def _request_snapshot(self):
+        """Nothing is recording (no armed order): ask the engine thread for one unrecorded frame."""
+        self.layout.snapshot.unlink(missing_ok=True)
+        self.layout.snapshot_request.touch()
+        deadline = time.monotonic() + self.snapshot_wait
+        while time.monotonic() < deadline:
+            if self.layout.snapshot.exists():
+                return self.layout.snapshot
+            time.sleep(0.25)
+        self.layout.snapshot_request.unlink(missing_ok=True)
+        return None
+
     # so_create_order
     def create_order(self, args: dict, **kw) -> str:
         text = (args.get("text") or "").strip()
         if not text:
             return _err("text is required: describe in one sentence what to watch for")
-        frame = args.get("reference_frame_path")
-        path = self.layout.newest_frame() if not frame else frame
+        path = self.layout.newest_frame() or self._request_snapshot()
         if path is None:
-            return _err("no reference frame: the camera has produced no frames yet. Make sure the gateway is "
-                        "running with camera access (so_status shows why), or pass reference_frame_path.")
+            return _err("no reference frame: the camera produced none. Make sure the gateway is running with "
+                        "camera access (so_status shows why).")
         try:
-            jpeg = open(path, "rb").read()
+            jpeg = path.read_bytes()
         except OSError as e:
             return _err(f"cannot read reference frame: {e}")
+        finally:
+            if path == self.layout.snapshot:
+                path.unlink(missing_ok=True)  # a snapshot is used once, never kept
         try:
             program = run_sync(compile_order(self.llm, text, jpeg))
         except ProgramError as e:
@@ -191,15 +207,15 @@ SCHEMAS = {
         "Compile a plain-English camera instruction into a draft Standing Order and return a plan (what it watches, "
         "what fires it, max vision calls per hour). Does not arm it. Describe one observable situation, not an action; "
         "the agent action is always 'tell the user' and cannot be chosen by the camera.",
-        {"text": {"type": "string", "description": "One sentence, e.g. 'tell me if I leave my mug on the desk for 10 minutes'"},
-         "reference_frame_path": {"type": "string", "description": "Optional JPEG to compile against; default is the latest camera frame"}},
+        {"text": {"type": "string", "description": "One sentence, e.g. 'tell me if I leave my mug on the desk for 10 minutes'"}},
         ["text"]),
     "so_arm": _schema("so_arm", "Start watching for an order. Only after the user has seen and approved its plan.", _ORDER_ID, ["order_id"]),
     "so_disarm": _schema("so_disarm", "Pause an order so it stops watching and spending vision calls.", _ORDER_ID, ["order_id"]),
     "so_list_orders": _schema("so_list_orders", "List all Standing Orders with status and last fire time."),
     "so_status": _schema("so_status", "Report Standing Orders camera state (running or unavailable and why), counters and vision budget use per order."),
     "so_backtest": _schema(
-        "so_backtest", "Replay an order over recent recorded camera footage and report when it would have fired, "
+        "so_backtest", "Replay an order over recent recorded camera footage (the camera records only while an order is "
+        "armed, unless the user turned on record_when_idle) and report when it would have fired, "
         "frames checked and how many were unresolved. Sends nothing.",
         {**_ORDER_ID, "minutes": {"type": "number", "description": "How far back to replay (default 10)"}}, ["order_id"]),
     "so_add_list_item": _schema(

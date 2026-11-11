@@ -26,5 +26,6 @@ config_schema:
   sample_fps: {type: float, default: 1.0}
   retention_minutes: {type: int, default: 60}
   max_recording_mb: {type: int, default: 2048}
+  record_when_idle: {type: bool, default: false, label: "Record continuously, even with no armed order (lets you backtest before arming)"}
   vision_budget_per_hour: {type: int, default: 20}
   deliver_to: {type: str, default: "", label: "Chat for fired orders"}

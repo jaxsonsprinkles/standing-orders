@@ -11,6 +11,8 @@ import threading
 import time
 from typing import Callable
 
+import cv2
+
 from ..engine.cascade import Cascade
 from ..engine.budget import VisionBudget
 from ..engine.clock import RealClock
@@ -58,13 +60,15 @@ class EngineThread:
     def __init__(self, layout: Layout, llm, on_fire: Callable[[str], None], *, source_factory: Callable,
                  retention_seconds: float = 3600, max_recording_bytes: int = 2 << 30, clock=None,
                  retry_seconds: float = 30.0, status_seconds: float = 10.0, flush_seconds: float = 30.0,
-                 stop_on_source_end: bool = False, verifier_factory: Callable | None = None):
+                 stop_on_source_end: bool = False, verifier_factory: Callable | None = None,
+                 record_when_idle: bool = False):
         self.layout, self.llm, self.on_fire, self.source_factory = layout, llm, on_fire, source_factory
         self.retention, self.max_bytes = retention_seconds, max_recording_bytes
         self.clock = clock or RealClock()
         self.retry_seconds, self.status_seconds, self.flush_seconds = retry_seconds, status_seconds, flush_seconds
         self.stop_on_source_end = stop_on_source_end  # FileSource in tests/replay ends; a camera should be retried
         self.verifier_factory = verifier_factory
+        self.record_when_idle = record_when_idle  # off: the camera is open only while an order is armed
         self.embedder = maybe_embedder()
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
@@ -146,11 +150,25 @@ class EngineThread:
             if not self.layout.read_status().get("state") == "unavailable":
                 self.layout.write_status("stopped", "")
 
+    def _should_capture(self, repo: OrderRepo) -> bool:
+        return self.record_when_idle or bool(repo.armed())
+
     def _loop_until_stopped(self) -> None:
         repo = OrderRepo(connect(self.layout.db))
         ring = RingBuffer(str(self.layout.ring), retention_seconds=self.retention, max_bytes=self.max_bytes)
         self.layout.clips.mkdir(parents=True, exist_ok=True)
+        idle_reported = False
         while not self._stop.is_set():
+            if not self._should_capture(repo):
+                if not idle_reported:
+                    ring.purge()  # no armed order: nothing stays recorded
+                    self.layout.write_status("idle", "no armed orders; the camera is closed")
+                    idle_reported = True
+                if self.layout.snapshot_request.exists():
+                    self._take_snapshot()
+                self._stop.wait(0.5)
+                continue
+            idle_reported = False
             source = self.source_factory()
             try:
                 source.start()
@@ -159,23 +177,46 @@ class EngineThread:
                 logger.warning("[standing_orders] camera unavailable: %s", e)
                 self._stop.wait(self.retry_seconds)
                 continue
-            ended = self._drive(source, repo, ring)
+            outcome = self._drive(source, repo, ring)
             source.stop()
-            if ended and self.stop_on_source_end:
+            if outcome == "idle":
+                continue
+            if outcome == "ended" and self.stop_on_source_end:
                 self.layout.write_status("stopped", "source ended")
                 return
             if not self._stop.is_set():
                 self.layout.write_status("unavailable", "camera stopped delivering frames; retrying")
                 self._stop.wait(self.retry_seconds)
 
-    def _drive(self, source, repo: OrderRepo, ring: RingBuffer) -> bool:
-        """Run frames until stop or the source ends. Returns True if the source ended."""
+    def _take_snapshot(self) -> None:
+        """One unrecorded frame so so_create_order can compile an order while nothing is armed."""
+        self.layout.snapshot_request.unlink(missing_ok=True)
+        source = self.source_factory()
+        try:
+            source.start()
+            frame = source.read()
+            ok, buf = cv2.imencode(".jpg", frame.image) if frame is not None else (False, None)
+            if ok:
+                tmp = self.layout.snapshot.with_suffix(".tmp")
+                tmp.write_bytes(buf.tobytes())
+                tmp.replace(self.layout.snapshot)
+        except Exception as e:
+            self.layout.write_status("unavailable", str(e))
+            logger.warning("[standing_orders] snapshot failed: %s", e)
+        finally:
+            source.stop()
+
+    def _drive(self, source, repo: OrderRepo, ring: RingBuffer) -> str:
+        """Run frames until stop, the source ends or the last armed order is disarmed.
+        Returns "ended", "idle" (close the camera) or "lost"."""
         sink = _FireSink(repo, self.on_fire)
         runner = Runner(source, repo, self._cascade_factory, self.clock, sink, recorder=ring,
                         clip_dir=str(self.layout.clips))
         last_status = last_flush = 0.0
         try:
             while not self._stop.is_set():
+                if not self._should_capture(repo):
+                    return "idle"
                 try:
                     runner.step()
                 except Exception as e:
@@ -185,7 +226,7 @@ class EngineThread:
                     continue
                 self.steps += 1
                 if runner.ended:
-                    return True
+                    return "ended"
                 now = time.monotonic()
                 if now - last_status >= self.status_seconds:
                     self.layout.write_status("running", "", frames_seen=self.steps, armed=len(repo.armed()))
@@ -196,7 +237,7 @@ class EngineThread:
         finally:
             self._flush_counters(repo)
             runner.close()
-        return False
+        return "lost"
 
 
 class _FireSink:

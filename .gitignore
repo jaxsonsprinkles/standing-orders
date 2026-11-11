@@ -3,3 +3,6 @@ __pycache__/
 *.pyc
 probe_frame.jpg
 .venv/
+.DS_Store
+.claude/
+media/

@@ -36,7 +36,8 @@ class StandingOrdersAdapter(BasePlatformAdapter):
         return EngineThread(
             layout, self.llm, on_fire, source_factory=self._make_source,
             retention_seconds=60 * float(self.extra.get("retention_minutes", 60)),
-            max_recording_bytes=int(self.extra.get("max_recording_mb", 2048)) << 20)
+            max_recording_bytes=int(self.extra.get("max_recording_mb", 2048)) << 20,
+            record_when_idle=bool(self.extra.get("record_when_idle", False)))
 
     def _on_fire(self, message: str) -> None:
         """Called from the engine thread: schedule the agent turn on the gateway loop."""

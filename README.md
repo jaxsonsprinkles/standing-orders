@@ -36,9 +36,11 @@ model rather than the local checks.
 
 1. You describe an order in chat: "if I leave my mug on the desk for 10 seconds after I walk away, tell me".
    `so_create_order` compiles it, with one reference frame, into a constrained JSON watch program (never code) and
-   returns a plain-language plan. The order is saved unarmed.
+   returns a plain-language plan. The order is saved unarmed. With nothing armed the camera is closed, so this takes
+   one unrecorded snapshot for the compiler and discards it.
 2. `so_backtest` replays recent footage through the same engine with a fake clock and lists the clips where the
-   order would have fired, plus how many frames stayed unresolved.
+   order would have fired, plus how many frames stayed unresolved. Footage exists only from times an order was
+   armed, unless you turn on `record_when_idle` (below).
 3. You arm it (`so_arm`). The engine samples 1 to 2 frames per second:
    - **T0** per-zone frame difference, lighting-normalized. Unchanged zones keep their last value.
    - **T1** local CLIP image embedding against the prompt, negatives and your saved examples.
@@ -60,7 +62,8 @@ hermes orders setup                    # downloads the CLIP weights, checksum ve
 hermes orders doctor --camera
 ```
 
-Add to `config.yaml` so camera sessions only get the plugin's tools:
+Add to `config.yaml` so camera sessions only get the plugin's tools. Without it, a fired turn gets all of your
+core tools:
 
 ```yaml
 platform_toolsets:
@@ -88,11 +91,15 @@ half enabled under Capabilities > Plugins.
 
 ## Disclosures
 
-- **Camera use and background capture.** While an order is armed and the gateway runs, the camera is read
-  continuously (1 to 2 frames per second) by a thread in the gateway. One lock file guarantees one camera owner.
-- **Recording.** A rolling recording is kept locally in `~/.hermes/plugin-data/standing-orders/` (60 minutes and 2 GB
-  by default), along with event clips, orders, events and counters. Nothing is uploaded or stored in the cloud.
-  `hermes orders purge` deletes all of it.
+- **Camera use and background capture.** The camera is open and recorded only while at least one order is armed
+  and the gateway runs (1 to 2 frames per second, in a thread in the gateway). It closes, and the rolling recording
+  is deleted, when the last order is disarmed. One lock file guarantees one camera owner. Creating an order with
+  nothing armed opens the camera once for a single frame that is used for the compile and then deleted.
+  **Opt-in:** the `record_when_idle` setting (default off) records continuously whenever the gateway runs, so
+  you can backtest before arming.
+- **Recording.** A rolling recording of the armed periods is kept locally in `~/.hermes/plugin-data/standing-orders/`
+  (60 minutes and 2 GB by default), along with event clips, orders, events and counters. Event clips in `clips/` are
+  kept until `hermes orders purge`, which deletes all of it. Nothing is uploaded or stored in the cloud.
 - **What goes to the model.** Only T2 and Confirm send image crops (zone crops, and 3 frames for Confirm) and the
   order's predicate prompts to the model you configured for Hermes, through `ctx.llm`. The compiler sends your
   sentence and one reference frame. The pane counts every call. The plugin reads no credentials.

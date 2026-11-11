@@ -86,6 +86,7 @@ def test_camera_failure_keeps_thread_up_reports_unavailable_and_stops_fast(tmp_p
         def stop(self):
             pass
 
+    arm_mug(layout)
     engine = EngineThread(layout, None, lambda m: None, source_factory=Denied, retry_seconds=60.0)
     engine.start()
     assert wait_for(lambda: layout.read_status()["state"] == "unavailable")
@@ -108,3 +109,69 @@ def test_second_owner_is_refused_by_lock_file(tmp_path):
         assert st["state"] == "unavailable" and "owns the camera" in st["detail"]
     finally:
         holder.close()
+
+
+class CountingSource:
+    """Opens/closes are counted; every read returns a lit frame."""
+    opened = closed = 0
+
+    def __init__(self):
+        from tests.helpers import scene
+        self._frame = scene(True)
+
+    def start(self):
+        CountingSource.opened += 1
+
+    def read(self):
+        from standing_orders.engine.types import Frame
+        time.sleep(0.02)
+        return Frame(self._frame, time.time(), "cam0")
+
+    def stop(self):
+        CountingSource.closed += 1
+
+
+def test_camera_opens_only_while_an_order_is_armed_and_recording_stops_with_it(tmp_path):
+    CountingSource.opened = CountingSource.closed = 0
+    layout = Layout(tmp_path / "data")
+    repo = OrderRepo(connect(layout.db))
+    engine = EngineThread(layout, None, lambda m: None, source_factory=CountingSource,
+                          verifier_factory=lambda p: ScriptedVerifier({}, FakeClock()))
+    engine.start()
+    try:
+        assert wait_for(lambda: layout.read_status()["state"] == "idle")
+        assert CountingSource.opened == 0 and not any(layout.ring.glob("*.jpg"))
+        program = parse_program(MUG)
+        validate_program(program)
+        repo.create(program, "armed")
+        assert wait_for(lambda: any(layout.ring.glob("*.jpg")))
+        repo.set_status(program.id, "paused")
+        assert wait_for(lambda: CountingSource.closed >= 1)
+        assert wait_for(lambda: not any(layout.ring.glob("*.jpg")))
+    finally:
+        engine.stop()
+
+
+def test_idle_engine_serves_a_snapshot_request_without_recording(tmp_path):
+    CountingSource.opened = CountingSource.closed = 0
+    layout = Layout(tmp_path / "data")
+    engine = EngineThread(layout, None, lambda m: None, source_factory=CountingSource)
+    engine.start()
+    try:
+        assert wait_for(lambda: layout.read_status()["state"] == "idle")
+        layout.snapshot_request.touch()
+        assert wait_for(lambda: layout.snapshot.exists())
+        assert layout.snapshot.read_bytes()[:2] == b"\xff\xd8" and not any(layout.ring.glob("*.jpg"))
+        assert CountingSource.closed == 1
+    finally:
+        engine.stop()
+
+
+def test_record_when_idle_keeps_the_camera_open_with_no_orders(tmp_path):
+    layout = Layout(tmp_path / "data")
+    engine = EngineThread(layout, None, lambda m: None, source_factory=CountingSource, record_when_idle=True)
+    engine.start()
+    try:
+        assert wait_for(lambda: any(layout.ring.glob("*.jpg")))
+    finally:
+        engine.stop()

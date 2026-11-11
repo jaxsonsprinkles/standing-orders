@@ -22,9 +22,11 @@ class Layout:
         self.clips = self.root / "clips"
         self.status_file = self.root / "status.json"
         self.lock_file = self.root / "engine.lock"
+        self.snapshot = self.root / "snapshot.jpg"                   # one frame for compiling an order, not recorded
+        self.snapshot_request = self.root / "snapshot.request"       # tools -> idle engine: "take one frame"
 
     def write_status(self, state: str, detail: str = "", **extra) -> None:
-        """Engine thread -> tools. state: starting | running | unavailable | stopped."""
+        """Engine thread -> tools. state: starting | running | idle | unavailable | stopped."""
         tmp = self.status_file.with_suffix(".tmp")
         tmp.write_text(json.dumps({"state": state, "detail": detail, "updated_at": time.time(), **extra}))
         tmp.replace(self.status_file)
