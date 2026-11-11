@@ -1,12 +1,36 @@
 # Standing Orders
 
-A Hermes plugin that wakes the agent when a plain-English condition becomes true in front of a camera.
+**Tell your agent what to watch for. The camera stays quiet until it happens, then your agent acts.**
 
-An MCP lets Hermes look through a camera when asked. Standing Orders works the other way: the camera stays silent
-until your order is true, then starts a real agent turn with the evidence (a short clip).
+A Hermes plugin that turns a webcam into a standing instruction. Say "tell me if I leave my mug on the desk for
+10 seconds" and your agent wakes up on its own, with a clip as evidence, only when that becomes true.
 
-> **Not a safety or security system.** It can miss events and it can fire falsely. Do not use it for anything where
-> a miss could hurt someone. Monitor only spaces you have the right to monitor, and follow local recording laws.
+<p>
+  <img src="docs/images/mug-test-1.png" width="48%" alt="Telegram: user asks for a mug alert, agent confirms its plan and waits for approval">
+  <img src="docs/images/mug-test-2.png" width="48%" alt="Telegram: agent arms, alerts that the mug was left, attaches a clip, then stops on request">
+</p>
+
+*A real run over Telegram: ask, approve, alert with clip, stop.*
+
+## What it's for
+
+| You say | Your agent |
+| --- | --- |
+| "If I leave my mug on the desk for 10 seconds, tell me." | Messages you with the clip (tested) |
+| "When a package is on the porch, text me and add 'bring in package' to my list." | Sends the clip, adds the task |
+| "If the stove light is on after I leave the kitchen, remind me." | Nudges you before you're out the door |
+| "When the plant looks dry, add 'water the fern' to my list." | Houseplant care, no sensor |
+| "When a new sticky note appears, add what it says to my list." | Turns notes into tasks |
+
+Agents can act but can't see what's happening around you. Standing Orders gives them eyes that open only when it
+matters: no motion alerts, no zones or thresholds to set up, just a sentence. Most frames are handled locally, and
+the model is called only for uncertain moments, within an hourly budget.
+
+> **Not a safety or security system.** It can miss events and fire falsely. Don't use it where a miss could hurt
+> someone. Monitor only spaces you may monitor, and follow local recording laws.
+
+**Live test result:** 1 firing, 9 of 20 budgeted vision calls used. One take; every decision in it went through the
+model rather than the local checks.
 
 ## How it works
 
@@ -30,7 +54,7 @@ until your order is true, then starts a real agent turn with the evidence (a sho
 ## Install
 
 ```bash
-hermes plugins install <repo-url>      # or link this folder into ~/.hermes/plugins/standing-orders
+hermes plugins install https://github.com/jaxsonsprinkles/standing-orders  # or link this folder into ~/.hermes/plugins/standing-orders
 hermes plugins enable standing-orders
 hermes orders setup                    # downloads the CLIP weights, checksum verified
 hermes orders doctor --camera
